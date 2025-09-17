@@ -1,0 +1,8 @@
+[project]
+name = "rpi-workshop-env-monitor"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "pymysql>=1.1.2",
+]
