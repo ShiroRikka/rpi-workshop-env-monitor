@@ -5,6 +5,13 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 class DatabaseManager:
     def __init__(self, host: str, port: int, user: str, password: str = ""):
+        """
+        数据库管理器类
+        :param host: MySQL主机地址
+        :param port: MySQL端口
+        :param user: MySQL用户名
+        :param password: MySQL密码
+        """
         self.host = host
         self.port = port
         self.user = user
