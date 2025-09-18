@@ -1,9 +1,10 @@
 [project]
 name = "rpi-workshop-env-monitor"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "数据库管理器"
 requires-python = ">=3.11"
 dependencies = [
     "loguru>=0.7.3",
     "pymysql>=1.1.2",
+    "tenacity>=9.1.2",
 ]
