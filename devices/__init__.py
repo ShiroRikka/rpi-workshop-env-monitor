@@ -12,9 +12,9 @@ __all__ = [
     "DS18B20",
     "DHT11",
     "MQ2",
-    "Relay",
+    "relay",
     "ActiveBuzzer",
     "PassiveBuzzer",
     "LCD1602",
-    "PCF8591",
+    "pcf8591",
 ]
