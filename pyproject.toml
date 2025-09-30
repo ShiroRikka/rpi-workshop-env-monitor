@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "adafruit-circuitpython-dht>=4.0.9",
     "gpiozero",
+    "lgpio>=0.2.2.0",
     "loguru>=0.7.3",
     "pymysql>=1.1.2",
     "rpi-gpio>=0.7.1",

@@ -4,15 +4,15 @@ import adafruit_dht
 from loguru import logger
 
 
-class rsi_dht11:
+class rpi_dht11:
     def __init__(self, pin=board.D14):
         self.pin = pin
-        self.sersor = adafruit_dht.DHT11(self.pin)
+        self.sensor = adafruit_dht.DHT11(self.pin)
 
     def read(self):
         try:
-            temperature = self.sersor.temperature
-            humidity = self.sersor.humidity
+            temperature = self.sensor.temperature
+            humidity = self.sensor.humidity
 
             if temperature is not None and humidity is not None:
                 logger.success(f"温度: {temperature:.1f}°C")
@@ -32,7 +32,7 @@ class rsi_dht11:
 
 # 测试
 if __name__ == "__main__":
-    dht11 = rsi_dht11(board.D14)
+    dht11 = rpi_dht11(board.D14)
     while True:
         dht11.read()
         time.sleep(2)
