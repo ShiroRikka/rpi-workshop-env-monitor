@@ -1,7 +1,6 @@
 import time
 import board
-from devices.dht import rpi_dht11
-
+from devices import rpi_dht11, rpi_relay
 
 # 主程序
 if __name__ == "__main__":

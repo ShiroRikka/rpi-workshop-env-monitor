@@ -10,6 +10,10 @@ class rpi_dht11:
         self.sensor = adafruit_dht.DHT11(self.pin)
 
     def read(self):
+        """
+
+        :return: 温度,湿度
+        """
         try:
             temperature = self.sensor.temperature
             humidity = self.sensor.humidity
