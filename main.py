@@ -1,10 +1,10 @@
-import devices
+import devices_old
 
 
 def init_devices():
-    ds18b20 = devices.DS18B20()
-    mq2 = devices.MQ2()
-    dht11 = devices.DHT11()
+    ds18b20 = devices_old.DS18B20()
+    mq2 = devices_old.MQ2()
+    dht11 = devices_old.DHT11()
     return ds18b20, mq2, dht11
 
 
