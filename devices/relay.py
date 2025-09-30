@@ -12,13 +12,16 @@ class rpi_relay:
         """
         self.pin = pin
         self.senser = OutputDevice(self.pin)
+        self.is_status = False
 
     def on(self):
         self.senser.on()
+        self.is_status = True
         logger.success("继电器通电")
 
     def off(self):
         self.senser.off()
+        self.is_status = False
         logger.success("继电器断电")
 
 
