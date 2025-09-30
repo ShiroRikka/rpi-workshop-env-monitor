@@ -4,7 +4,11 @@ version = "1.0.0"
 description = "数据库管理器"
 requires-python = ">=3.11"
 dependencies = [
+    "adafruit-circuitpython-dht>=4.0.9",
+    "gpiozero",
     "loguru>=0.7.3",
     "pymysql>=1.1.2",
+    "rpi-gpio>=0.7.1",
+    "smbus>=1.1.post2",
     "tenacity>=9.1.2",
 ]
