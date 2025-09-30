@@ -8,13 +8,13 @@ if __name__ == "__main__":
     relay = rpi_relay(15)
     while True:
         tem, hum = dht11.read()
-        if tem >= 30 and relay.is_status is False:
+        if tem is None or hum is None:
+            time.sleep(1)
+            continue
+          
+        if (tem >= 30 or hum >= 80) and not relay.is_status:
             relay.on()
-        elif hum >= 80 and relay.is_status is False:
-            relay.on()
-        elif tem < 30 and relay.is_status is True:
-            relay.off()
-        elif tem < 80 and relay.is_status is True:
+        elif tem < 30 and hum < 80 and relay.is_status:
             relay.off()
 
         time.sleep(1)
