@@ -19,29 +19,34 @@ class RpiRelay:
     - 无效引脚范围(2-27)会在初始化时抛出ValueError
     """
 
-    def __init__(self, pin: int = 15):
+    def __init__(self, pin: int = 15) -> None:
         if not (2 <= pin <= 27):
             raise ValueError("无效GPIO引脚，请使用BCM编号2-27")
         self.relay = OutputDevice(pin)
         self.relay.off()  # 确保初始状态为关闭
         logger.info(f"继电器初始化: GPIO{pin}，初始状态：关闭")
 
-    def on(self):
+    def on(self) -> None:
         """激活继电器（仅当未激活时操作）"""
         if not self.is_on:
             self.relay.on()
             logger.info(f"继电器已激活 ({self.relay.pin})")
 
-    def off(self):
+    def off(self) -> None:
         """关闭继电器（仅当激活时操作）"""
         if self.is_on:
             self.relay.off()
             logger.info(f"继电器已关闭 ({self.relay.pin})")
 
-    def toggle(self):
+    def toggle(self) -> None:
         self.relay.toggle()
         status = "激活" if self.is_on else "关闭"
         logger.info(f"继电器状态已切换 ({self.relay.pin})，当前状态：{status}")
+
+    def close(self) -> None:
+        """关闭继电器并释放资源"""
+        self.relay.close()
+        logger.info(f"GPIO资源已释放 (GPIO{self.relay.pin})")
 
     @property
     def is_on(self) -> bool:
@@ -52,17 +57,9 @@ class RpiRelay:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            self.off()
-            self.relay.close()
-            logger.info(f"GPIO资源已释放 (GPIO{self.relay.pin})")
+            self.close()
         except Exception as e:
             logger.error(f"释放GPIO资源失败: {e}")
-
-    def __del__(self):
-        try:
-            self.relay.close()
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":
