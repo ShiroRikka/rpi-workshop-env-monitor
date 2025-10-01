@@ -1,4 +1,5 @@
 import pymysql
+from pymysql import MySQLError
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -51,20 +52,25 @@ class DatabaseManager:
                 """)
         logger.success("数据库初始化成功")
 
-    def insert_env_data(self, temp: int | float | None, humid: float | int | None):
+    def insert_env_data(self, temp: float | int | None, humid: float | int | None):
         """
         将传入数据存入数据库中
         :param temp: 温度
         :param humid: 湿度
         """
-        with self._get_connection("rpi_env_monitor") as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO environment_data (temperature, humidity) VALUES (%s, %s)
-                """,
-                    (temp, humid),
-                )
+        try:
+            with self._get_connection("rpi_env_monitor") as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO environment_data (temperature, humidity) VALUES (%s, %s)
+                        """,
+                        (temp, humid),
+                    )
+        except MySQLError as e:
+            logger.error(f"MySQL 错误: {e}")
+        except Exception as e:
+            logger.exception(f"未知错误导致插入失败: {e}")
 
 
 if __name__ == "__main__":

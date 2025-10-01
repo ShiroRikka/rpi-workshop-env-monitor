@@ -1,5 +1,5 @@
-from .dht import rpi_dht11
-from .relay import rpi_relay
+from .dht import RpiDht11
+from .relay import RpiRelay
 from .databasemanager import DatabaseManager
 
-__all__ = ["rpi_dht11", "rpi_relay", "DatabaseManager"]
+__all__ = ["RpiDht11", "RpiRelay", "DatabaseManager"]
