@@ -46,7 +46,7 @@ class RpiRelay:
     def close(self) -> None:
         """关闭继电器并释放资源"""
         self.relay.close()
-        logger.info(f"GPIO资源已释放 (GPIO{self.relay.pin})")
+        logger.info(f"继电器资源已释放 (GPIO{self.relay.pin})")
 
     @property
     def is_on(self) -> bool:
@@ -59,7 +59,7 @@ class RpiRelay:
         try:
             self.close()
         except Exception as e:
-            logger.error(f"释放GPIO资源失败: {e}")
+            logger.error(f"释放继电器资源失败: {e}")
 
 
 if __name__ == "__main__":
