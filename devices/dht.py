@@ -16,21 +16,21 @@ class RpiDht11:
     注意事项:
     - DHT11传感器需要至少2秒的读取间隔
     - 读取可能因时序问题失败，本类实现自动重试机制
-    - 使用with语句确保资源正确释放
+    - 推荐使用with语句确保资源正确释放
     """
 
     def __init__(
         self,
         pin=board.D14,
-        max_retries=3,
-        retry_delay=0.2,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
     ):
         """初始化DHT11传感器
 
-        Args:
-            pin: GPIO引脚，使用board库定义的引脚名
-            max_retries: 读取失败时的最大重试次数
-            retry_delay: 重试之间的延迟（秒）
+
+        :param pin: GPIO引脚，使用board库定义的引脚名
+        :param  max_retries: 读取失败时的最大重试次数
+        :param  retry_delay: 重试之间的延迟（秒）
         """
         self.pin = pin
         self.max_retries = max_retries
@@ -56,7 +56,7 @@ class RpiDht11:
     def read(self) -> Tuple[Optional[float], Optional[float]]:
         """读取温度和湿度
 
-        :Returns: tuple: (温度, 湿度)，如果读取失败则返回(None, None)
+        :Returns tuple: (温度, 湿度)，如果读取失败则返回(None, None)
 
         注意:
             DHT11传感器读取可能因时序问题失败，本方法会自动重试
