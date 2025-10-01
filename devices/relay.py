@@ -39,24 +39,30 @@ class RpiRelay:
             logger.info(f"继电器已关闭 ({self.relay.pin})")
 
     def toggle(self):
-        """切换继电器状态"""
         self.relay.toggle()
-        logger.info(f"继电器状态已切换 ({self.relay.pin})")
+        status = "激活" if self.is_on else "关闭"
+        logger.info(f"继电器状态已切换 ({self.relay.pin})，当前状态：{status}")
 
     @property
     def is_on(self) -> bool:
-        """返回当前继电器状态（True 表示开启）"""
-        return self.relay.value == 1
+        return self.relay.is_active
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
+            self.off()
             self.relay.close()
             logger.info(f"GPIO资源已释放 (GPIO{self.relay.pin})")
         except Exception as e:
             logger.error(f"释放GPIO资源失败: {e}")
+
+    def __del__(self):
+        try:
+            self.relay.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
