@@ -30,6 +30,7 @@ class DatabaseManager:
             read_timeout=5,
             write_timeout=5,
             autocommit=True,
+            init_command="SET time_zone = '+08:00'",
         )
 
     def _init_database(self):
@@ -37,19 +38,20 @@ class DatabaseManager:
         with self._get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("CREATE DATABASE IF NOT EXISTS rpi_env_monitor")
+
         with self._get_connection("rpi_env_monitor") as connection:
             with connection.cursor() as cursor:
                 cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS environment_data (
-                                id INT AUTO_INCREMENT PRIMARY KEY,
-                                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                temperature FLOAT NOT NULL,
-                                humidity FLOAT NOT NULL
-                            )
-                        """)
+                    CREATE TABLE IF NOT EXISTS environment_data (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        temperature FLOAT NOT NULL,
+                        humidity FLOAT NOT NULL
+                    )
+                """)
         logger.success("数据库初始化成功")
 
-    def insert_env_data(self, temp: float, humid: float | int):
+    def insert_env_data(self, temp: int | float | None, humid: float | int | None):
         """
         将传入数据存入数据库中
         :param temp: 温度
