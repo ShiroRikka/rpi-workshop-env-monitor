@@ -86,7 +86,11 @@ class RpiDht11:
 
 # 测试
 if __name__ == "__main__":
-    with RpiDht11(board.D14) as dht11:
-        while True:
-            dht11.read()
-            time.sleep(2)
+    try:
+        with RpiDht11(board.D14) as dht11:
+            while True:
+                dht11.read()
+                time.sleep(2)
+    except KeyboardInterrupt:
+        logger.info("用户终止程序")
+
