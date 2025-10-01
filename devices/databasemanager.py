@@ -4,7 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 
 class DatabaseManager:
-    def __init__(self, host: str, port: int, user: str, password: str = ""):
+    def __init__(self, host: str | None, port, user: str | None, password):
         """
         数据库管理器类
         :param host: MySQL主机地址
