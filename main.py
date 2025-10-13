@@ -4,7 +4,7 @@ from loguru import logger
 from dotenv import load_dotenv
 import os
 
-from devices import DatabaseManager, RpiRelay, RpiDht11, RpiDs18b20
+from devices import DatabaseManager, RpiRelay, RpiDht11, RpiDs18b20,RpiLcd1602
 
 
 # 加载环境变量
@@ -24,12 +24,25 @@ def main():
     db = DatabaseManager(**DB_CONFIG)
 
     # 初始化传感器和继电器
-    with RpiDht11(board.D14) as dht11, RpiDs18b20() as ds18b20, RpiRelay(15) as relay:
+    with RpiDht11(board.D23) as dht11, RpiDs18b20() as ds18b20, RpiRelay(24) as relay, RpiLcd1602() as lcd:
         try:
             while True:
                 # 读取温湿度数据
                 dht_temperature, humidity = dht11.read()
                 ds18_temperature = ds18b20.read()
+
+                # 在LCD1602上显示温湿度
+                if dht_temperature is not None and humidity is not None:
+                    lcd.clear()
+                    # 格式化显示字符串，保留一位小数
+                    temp_str = f"Temp: {dht_temperature:.1f} C"
+                    humi_str = f"Humi: {humidity:.1f} %"
+                    lcd.write(0, 0, temp_str)
+                    lcd.write(0, 1, humi_str)
+                else:
+                    lcd.clear()
+                    lcd.write(0, 0, "Sensor Read Error")
+                    lcd.write(0, 1, "Check DHT11!")
 
                 # 插入数据库
                 if ds18_temperature is not None and humidity is not None:
