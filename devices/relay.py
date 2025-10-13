@@ -64,7 +64,7 @@ class RpiRelay:
 
 if __name__ == "__main__":
     try:
-        with RpiRelay(15) as relay:
+        with RpiRelay(24) as relay:
             relay.on()
             time.sleep(2)
             relay.toggle()

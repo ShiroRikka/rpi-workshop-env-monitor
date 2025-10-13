@@ -87,7 +87,7 @@ class RpiDht11:
 # 测试
 if __name__ == "__main__":
     try:
-        with RpiDht11(board.D14) as dht11:
+        with RpiDht11(board.D23) as dht11:
             while True:
                 dht11.read()
                 time.sleep(2)

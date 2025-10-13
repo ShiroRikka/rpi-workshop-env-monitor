@@ -50,7 +50,11 @@ def main():
                     lcd.write(0, 1, "Check DHT11!")
 
                 # 插入数据库
-                if ds18_temperature is not None and humidity is not None:
+                if (
+                    ds18_temperature is not None
+                    and humidity is not None
+                    and ppm is not None
+                ):
                     db.insert_env_data(ds18_temperature, humidity)
 
                 # 根据温度控制继电器（示例逻辑：温度高于25度时开启继电器）
