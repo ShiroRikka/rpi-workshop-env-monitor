@@ -35,6 +35,21 @@ class RpiMq2:
         self.mq2do = Button(do_pin, pull_up=False)
         logger.info(f"MQ-2 传感器初始化完成。模拟通道: 0, 数字引脚: {do_pin}")
 
+    def __enter__(self):
+        """
+        进入 with 语句时调用，返回实例本身。
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        退出 with 语句时调用，负责清理资源。
+        """
+        logger.info("正在清理传感器资源...")
+        self.adc.close()
+        self.mq2do.close()
+        logger.info("传感器资源已清理。")
+
     def read_analog(self) -> int:
         """
         读取传感器的模拟原始值。
@@ -54,10 +69,10 @@ class RpiMq2:
 if __name__ == "__main__":
     logger.info("程序启动，开始监听 MQ-2 传感器...")
     try:
-        mq2_sensor = RpiMq2()
-        while True:
-            mq2_sensor.read_analog()
-            time.sleep(2)
+        with RpiMq2() as mq2_sensor:
+            while True:
+                mq2_sensor.read_analog()
+                time.sleep(2)
     except KeyboardInterrupt:
         logger.warning("程序被用户中断 (Ctrl+C)。")
     except Exception as e:
