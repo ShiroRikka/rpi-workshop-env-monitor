@@ -172,7 +172,7 @@ class RpiLcd1602:
 if __name__ == "__main__":
     try:
         # 使用 'with' 语句可以确保I2C总线被正确关闭
-        with LCD1602(address=0x27, backlight_on=True) as lcd:
+        with RpiLcd1602(address=0x27, backlight_on=True) as lcd:
             lcd.write(4, 0, "Hello")
             lcd.write(7, 1, "world!")
             time.sleep(3)
