@@ -1,11 +1,13 @@
 import time
 import smbus
 
+
 class RpiLcd1602:
     """
     用于通过I2C接口控制LCD1602显示器的类。
     该类封装了与基于PCF8574 I/O扩展器的I2C LCD模块进行通信所需的所有功能。
     """
+
     # I2C设备默认地址
     DEFAULT_ADDRESS = 0x27
 
@@ -23,7 +25,7 @@ class RpiLcd1602:
         self.addr = address
         self.bus = smbus.SMBus(bus_num)
         self.backlight_on = backlight_on
-      
+
         try:
             self._init_display()
         except Exception as e:
@@ -104,11 +106,11 @@ class RpiLcd1602:
         time.sleep(0.005)
         self._send_command(0x0C)  # 开启显示, 无光标, 无闪烁
         time.sleep(0.005)
-        self.clear()              # 清除显示
+        self.clear()  # 清除显示
 
     def close(self):
         """关闭I2C总线连接。"""
-        if hasattr(self, 'bus'):
+        if hasattr(self, "bus"):
             self.bus.close()
 
     def __enter__(self):
@@ -122,7 +124,7 @@ class RpiLcd1602:
     def clear(self):
         """清空屏幕并将光标移至左上角（0, 0）。"""
         self._send_command(0x01)
-        time.sleep(0.002) # 清屏命令需要较长时间
+        time.sleep(0.002)  # 清屏命令需要较长时间
 
     def set_backlight(self, state):
         """
@@ -138,7 +140,7 @@ class RpiLcd1602:
             if self.backlight_on:
                 display_ctrl |= 0x04  # Display on
             self._send_command(display_ctrl)
-          
+
     def write(self, x, y, text):
         """
         在指定位置写入字符串。
@@ -165,15 +167,16 @@ class RpiLcd1602:
         for char in text:
             self._send_data(ord(char))
 
+
 # 程序入口
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         # 使用 'with' 语句可以确保I2C总线被正确关闭
         with LCD1602(address=0x27, backlight_on=True) as lcd:
-            lcd.write(4, 0, 'Hello')
-            lcd.write(7, 1, 'world!')
+            lcd.write(4, 0, "Hello")
+            lcd.write(7, 1, "world!")
             time.sleep(3)
-          
+
             lcd.clear()
             lcd.write(0, 0, "Testing backlight")
             time.sleep(1)
@@ -185,7 +188,7 @@ if __name__ == '__main__':
             lcd.clear()
             lcd.write(0, 0, "Backlight is ON")
             time.sleep(2)
-          
+
     except IOError as e:
         print(f"错误: {e}")
     except KeyboardInterrupt:

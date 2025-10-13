@@ -4,7 +4,7 @@ from loguru import logger
 from dotenv import load_dotenv
 import os
 
-from devices import DatabaseManager, RpiRelay, RpiDht11, RpiDs18b20,RpiLcd1602
+from devices import DatabaseManager, RpiRelay, RpiDht11, RpiDs18b20, RpiLcd1602
 
 
 # 加载环境变量
@@ -24,7 +24,12 @@ def main():
     db = DatabaseManager(**DB_CONFIG)
 
     # 初始化传感器和继电器
-    with RpiDht11(board.D23) as dht11, RpiDs18b20() as ds18b20, RpiRelay(24) as relay, RpiLcd1602() as lcd:
+    with (
+        RpiDht11(board.D23) as dht11,
+        RpiDs18b20() as ds18b20,
+        RpiRelay(24) as relay,
+        RpiLcd1602() as lcd,
+    ):
         try:
             while True:
                 # 读取温湿度数据
