@@ -7,170 +7,139 @@ import RPi.GPIO as GPIO
 
 
 class GasSensor:
-    """一个用于控制PCF8591 ADC和气体传感器的类。
+    """通过PCF8591 ADC和树莓派GPIO与气体传感器交互的类。
 
-    该类封装了通过I2C与PCF8591模数转换器通信的逻辑，以及通过GPIO
-    读取气体传感器数字信号和控制蜂鸣器的功能。它提供了一个简单的接口
-    来读取模拟值、运行持续的危险气体检测循环，并在程序结束时清理资源。
-
-    :param i2c_address: PCF8591模块的I2C地址。
-    :type i2c_address: int
-    :param digital_pin: 连接气体传感器数字输出引脚的BCM编号。
-    :type digital_pin: int
-    :param buzzer_pin: 连接蜂鸣器引脚的BCM编号。
-    :type buzzer_pin: int
+    该类封装了初始化PCF8591模数转换器、读取模拟和数字信号、
+    以及持续监控传感器状态的功能。
     """
 
-    def __init__(self, i2c_address, digital_pin, buzzer_pin):
-        """初始化GasSensor对象，设置I2C总线和GPIO引脚。"""
-        self.i2c_address = i2c_address
-        self.digital_pin = digital_pin
-        self.buzzer_pin = buzzer_pin
-        self.last_status = 1  # 记录上一次的传感器状态，1为安全，0为危险
-        self.buzzer_toggle_counter = 0  # 用于蜂鸣器鸣叫的计数器
+    def __init__(self, address=0x48, do_pin=17):
+        """初始化气体传感器和PCF8591模块。
 
-        # 初始化I2C总线 (Raspberry Pi 2/3/Zero/Zero W使用总线1)
-        self.bus = smbus.SMBus(1)
+        :param address: PCF8591模块的I2C地址
+        :type address: int
+        :param do_pin: 连接到气体传感器数字输出的BCM GPIO引脚号
+        :type do_pin: int
+        """
+        self.address = address
+        self.do_pin = do_pin
+        self.last_status = 1  # 初始状态设为安全
+        try:
+            # 初始化I2C总线 (对于RPI V1版本，使用SMBus(0))
+            self.bus = smbus.SMBus(1)
+            # 设置GPIO模式和引脚
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setwarnings(False)
+            GPIO.setup(self.do_pin, GPIO.IN)
+        except Exception as e:
+            print(f"初始化失败: {e}")
+            raise
 
-        # 初始化GPIO
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.digital_pin, GPIO.IN)
-        GPIO.setup(self.buzzer_pin, GPIO.OUT)
-        # 初始关闭蜂鸣器 (假设高电平为关闭)
-        GPIO.output(self.buzzer_pin, GPIO.HIGH)
+    def read_adc(self, channel):
+        """从PCF8591读取指定的模拟通道值。
 
-    def _read_adc_channel(self, channel):
-        """从PCF8591的指定通道读取模拟值。
-
-        :param channel: 要读取的ADC通道，范围0-3。
+        :param channel: 要读取的模拟通道 (0, 1, 2, 或 3)
         :type channel: int
-        :return: 读取到的8位模拟值 (0-255)。
+        :return: 0-255之间的模拟读数，如果发生错误则返回-1
         :rtype: int
         """
         if not 0 <= channel <= 3:
-            raise ValueError("ADC通道必须在0到3之间")
+            print("错误: 通道选择范围是0-3")
+            return -1
         try:
-            # 启用指定通道的ADC
-            self.bus.write_byte(self.i2c_address, 0x40 + channel)
-            # 读取一次以启动转换
-            self.bus.read_byte(self.i2c_address)
-            # 再次读取以获取转换结果
-            return self.bus.read_byte(self.i2c_address)
+            # 选择并启动转换
+            self.bus.write_byte(self.address, 0x40 | channel)
+            # 读取上一次的转换结果（本次转换未完成）
+            self.bus.read_byte(self.address)
+            # 读取本次转换的结果
+            return self.bus.read_byte(self.address)
         except Exception as e:
-            print(f"读取ADC地址 {hex(self.i2c_address)} 通道 {channel} 时出错: {e}")
+            print(f"读取ADC地址 0x{self.address:02X} 时出错: {e}")
             return -1
 
-    def _write_dac_value(self, value):
-        """向PCF8591的DAC写入一个模拟值。
+    def write_dac(self, value):
+        """向PCF8591的数模转换器(DAC)写入一个值。
 
-        :param value: 要写入的模拟值，范围0-255。
+        :param value: 要写入的模拟值，范围为0-255
         :type value: int
         """
-        if not 0 <= value <= 255:
-            raise ValueError("DAC值必须在0到255之间")
         try:
-            self.bus.write_byte_data(self.i2c_address, 0x40, value)
+            temp = int(value)
+            if 0 <= temp <= 255:
+                self.bus.write_byte_data(self.address, 0x40, temp)
+            else:
+                print("错误: 写入值的范围是0-255")
         except Exception as e:
-            print(f"向DAC地址 {hex(self.i2c_address)} 写入值 {value} 时出错: {e}")
+            print(f"写入DAC地址 0x{self.address:02X} 时出错: {e}")
 
     def _print_status_message(self, status):
-        """根据传感器状态打印相应的消息。
+        """根据状态打印相应的消息。
 
-        :param status: 传感器状态，1表示安全，0表示检测到危险气体。
+        :param status: 传感器的状态 (1 为安全, 0 为危险)
         :type status: int
         """
-        if status == 1:
+        if status == 1:  # 安全
             print("")
             print("   ******************")
-            print("   *     安全~      *")
+            print("   *   安全 Safe~   *")
             print("   ******************")
             print("")
-        elif status == 0:
+        elif status == 0:  # 检测到烟雾
             print("")
             print("   ************************")
-            print("   * 检测到危险气体! *")
+            print("   * 检测到危险气体 Danger! *")
             print("   ************************")
             print("")
 
-    def read_analog_value(self, channel=0):
-        """读取指定ADC通道的模拟值。
+    def monitor(self, interval=0.2):
+        """持续监控气体传感器的模拟和数字输出。
 
-        :param channel: 要读取的ADC通道，默认为0。
-        :type channel: int
-        :return: 8位模拟值 (0-255)，如果出错则返回-1。
-        :rtype: int
+        :param interval: 每次读取之间的时间间隔（秒）
+        :type interval: float
         """
-        return self._read_adc_channel(channel)
-
-    def run_detection(self, delay=0.2):
-        """运行气体检测循环。
-
-        此方法会持续读取传感器的数字和模拟值。当检测到状态变化时，
-        会打印消息。如果检测到危险气体，蜂鸣器会鸣响。
-
-        :param delay: 每次检测之间的延时时间（秒）。
-        :type delay: float
-        """
-        print("开始气体检测循环，按 Ctrl+C 退出。")
+        print(
+            f"开始监控气体传感器 (I2C地址: 0x{self.address:02X}, DO引脚: {self.do_pin})..."
+        )
         try:
             while True:
-                # 读取模拟值并打印
-                analog_value = self.read_analog_value(0)
-                print(f"模拟值: {analog_value}")
+                # 读取模拟值 (通常连接到AIN0)
+                analog_value = self.read_adc(0)
+                print(f"模拟值 AIN0 = {analog_value}")
 
                 # 读取数字IO口值
-                current_status = GPIO.input(self.digital_pin)
+                digital_status = GPIO.input(self.do_pin)
 
-                # 检查状态是否发生变化
-                if current_status != self.last_status:
-                    self._print_status_message(current_status)
-                    self.last_status = current_status
+                # 仅在状态改变时打印消息
+                if digital_status != self.last_status:
+                    self._print_status_message(digital_status)
+                    self.last_status = digital_status
 
-                # 根据当前状态控制蜂鸣器
-                if current_status == 0:  # 检测到危险气体
-                    self.buzzer_toggle_counter += 1
-                    # 通过高低电平交替变化使蜂鸣器发声
-                    if self.buzzer_toggle_counter % 2 == 0:
-                        GPIO.output(self.buzzer_pin, GPIO.HIGH)
-                    else:
-                        GPIO.output(self.buzzer_pin, GPIO.LOW)
-                else:  # 安全状态
-                    GPIO.output(self.buzzer_pin, GPIO.HIGH)  # 关闭蜂鸣器
-                    self.buzzer_toggle_counter = 0  # 重置计数器
-
-                time.sleep(delay)
+                time.sleep(interval)
         except KeyboardInterrupt:
-            print("\n检测到中断信号，正在停止...")
-        finally:
-            self.cleanup()
+            print("\n监控已停止。")
 
     def cleanup(self):
-        """清理GPIO资源，关闭蜂鸣器。"""
-        print("正在清理资源...")
-        GPIO.output(self.buzzer_pin, GPIO.HIGH)  # 确保蜂鸣器关闭
+        """释放GPIO资源。"""
+        print("正在清理GPIO资源...")
         GPIO.cleanup()
-        print("资源清理完毕。")
+
+    def __enter__(self):
+        """支持 with 语句的入口。"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """支持 with 语句的出口，自动清理资源。"""
+        self.cleanup()
 
 
 if __name__ == "__main__":
-    # 配置参数
-    I2C_ADDRESS = 0x48  # PCF8591的I2C地址
-    GAS_SENSOR_DO_PIN = 17  # 气体传感器数字输出引脚
-    BUZZER_PIN = 18  # 蜂鸣器引脚
-
     try:
-        # 创建GasSensor实例
-        gas_detector = GasSensor(
-            i2c_address=I2C_ADDRESS,
-            digital_pin=GAS_SENSOR_DO_PIN,
-            buzzer_pin=BUZZER_PIN,
-        )
-        # 运行检测循环
-        gas_detector.run_detection()
+        # 使用 'with' 语句可以确保程序退出时自动调用 cleanup() 释放资源
+        with GasSensor() as sensor:
+            # 示例1: 监控气体传感器
+            sensor.monitor(interval=0.5)
+
     except Exception as e:
-        print(f"程序运行出错: {e}")
+        print(f"发生未预期的错误: {e}")
     finally:
-        # 确保在任何情况下都尝试清理资源
-        if "gas_detector" in locals():
-            gas_detector.cleanup()
+        print("程序结束。")
