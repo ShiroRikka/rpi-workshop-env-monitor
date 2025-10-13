@@ -1,7 +1,7 @@
 import pymysql
 from pymysql import MySQLError
 from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt
 from dotenv import load_dotenv
 import os
 
@@ -45,7 +45,7 @@ class DatabaseManager:
         self.database_name = database_name
         self.table_name = table_name
 
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+    @retry(stop=stop_after_attempt(3))
     def _get_connection(self, database: str | None = None):
         """
         获取数据库连接，带有重试机制。
