@@ -10,7 +10,8 @@ from config import settings
 # 导入所有需要并发运行的服务
 from services.data_manager import DataManager
 from services.display_manager import DisplayManager
-from api.main_api import run_server
+# from api.main_api import run_server
+from state import shared_state
 
 
 async def main():
@@ -25,7 +26,7 @@ async def main():
 
     # 2. 初始化所有服务
     # 我们将共享状态和配置传递给需要它们的模块
-    data_manager = DataManager()
+    data_manager = DataManager(settings, shared_state)
     display_manager = DisplayManager()
 
     # 3. 使用 asyncio.gather 并发运行所有长期任务
@@ -37,7 +38,7 @@ async def main():
         await asyncio.gather(
             data_manager.run(),  # 任务1: 数据采集与控制循环
             display_manager.run(),  # 任务2: 屏幕显示更新循环
-            run_server(settings),  # 任务3: FastAPI Web服务
+            # run_server(settings),  # 任务3: FastAPI Web服务
         )
     except Exception as e:
         logger.critical(f"某个核心服务发生致命错误，程序即将退出: {e}")

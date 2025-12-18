@@ -7,7 +7,7 @@ from hardware.mock_sensors import MockSmokeSensor, MockADCSensor
 
 
 class DataManager:
-    def __init__(self, config, shared_state):
+    def __init__(self, config, shared_state: dict):
         self.config = config
         self.shared_state = shared_state
         self.sensors = self._initialize_sensors()
@@ -20,11 +20,11 @@ class DataManager:
         # DHT11 是真实的，所以我们创建真实的实例
         import board
 
-        sensors["dht11"] = DHT11Sensor(name="DHT11", pin=board.D4)  # 假设接在GPIO4
+        sensors["dht11"] = DHT11Sensor(pin=board.D24)  # 假设接在GPIO24
 
         # 其他传感器还没到，我们创建模拟实例
-        sensors["smoke"] = MockSmokeSensor(name="Smoke", pin=0)
-        sensors["adc"] = MockADCSensor(name="ADC", pin=0)
+        sensors["smoke"] = MockSmokeSensor(pin=0)
+        sensors["adc"] = MockADCSensor(pin=0)
 
         return sensors
 
