@@ -15,8 +15,3 @@ class BaseSensor(ABC):
         所有子类都必须实现这个方法。
         """
         pass
-
-    @property
-    def value(self):
-        """获取最后一次读取的值"""
-        return self._value
