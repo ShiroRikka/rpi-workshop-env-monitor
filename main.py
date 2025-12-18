@@ -1,11 +1,11 @@
 from loguru import logger
-from src.hardware.dht_11 import dht_inst
+from hardware.dht11_sensor import DHT11Sensor
 import asyncio
 
 
 async def main():
     while True:
-        temperature, humidity = await dht_inst.read()
+        temperature, humidity = await DHT11Sensor().read()
         logger.info(f"温度：{temperature} C,湿度：{humidity} %")
 
 
