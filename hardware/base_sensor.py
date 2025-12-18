@@ -21,6 +21,3 @@ class BaseSensor(ABC):
     def value(self):
         """获取最后一次读取的值"""
         return self._value
-
-    def __str__(self):
-        return f"<{self.name} on pin {self.pin}>"

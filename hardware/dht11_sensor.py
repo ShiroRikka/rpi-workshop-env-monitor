@@ -1,4 +1,4 @@
-from src.hardware.base_sensor import BaseSensor
+from hardware.base_sensor import BaseSensor
 import asyncio
 import adafruit_dht
 import board
