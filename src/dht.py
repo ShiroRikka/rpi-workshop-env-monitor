@@ -2,6 +2,12 @@ import time
 from loguru import logger
 import asyncio
 
+# 前提：
+# sudo nano /boot/firmware/config.txt
+# 在末尾添加：dtoverlay=dht11,gpiopin=23
+# sudo reboot
+
+
 # 定义设备路径（通常是device0，如果有多个传感器可能是device1等）
 SENSOR_PATH = "/sys/bus/iio/devices/iio:device0"
 
