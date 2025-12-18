@@ -1,18 +1,10 @@
 [project]
 name = "rpi-workshop-env-monitor"
 version = "1.0.0"
-description = "数据库管理器"
+description = "车间环境"
 requires-python = ">=3.11"
 dependencies = [
     "adafruit-circuitpython-dht>=4.0.9",
-    "cryptography>=46.0.2",
-    "dotenv>=0.9.9",
-    "gpiozero",
-    "lgpio>=0.2.2.0",
     "loguru>=0.7.3",
-    "pymysql>=1.1.2",
     "rpi-gpio>=0.7.1",
-    "smbus>=1.1.post2",
-    "tenacity>=9.1.2",
-    "w1thermsensor>=2.3.0",
 ]
