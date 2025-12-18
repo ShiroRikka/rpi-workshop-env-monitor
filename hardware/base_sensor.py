@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 class BaseSensor(ABC):
     """所有传感器的抽象基类"""
 
-    def __init__(self, name: str, pin: int):
-        self.name = name
+    def __init__(self, pin: int):
         self.pin = pin
         self._value = None
 

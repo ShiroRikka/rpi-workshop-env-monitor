@@ -5,8 +5,8 @@ import board
 
 
 class DHT11Sensor(BaseSensor):
-    def __init__(self, name: str, pin: board.pin):
-        super().__init__(name, pin)
+    def __init__(self, pin: board.pin):
+        super().__init__(pin)
         self.dht_device = adafruit_dht.DHT11(self.pin)
 
     async def read(self):
