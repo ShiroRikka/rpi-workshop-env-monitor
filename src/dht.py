@@ -1,26 +1,32 @@
 import time
-import board
-import adafruit_dht
+from loguru import logger
 
-# 初始化传感器，假设连接到 GPIO 4
-# 对于树莓派 5，如果遇到 libgpiod 错误，该库可能不稳定，建议用方案二
-dhtDevice = adafruit_dht.DHT11(board.D23)
+# 定义设备路径（通常是device0，如果有多个传感器可能是device1等）
+SENSOR_PATH = "/sys/bus/iio/devices/iio:device0"
+
+
+def read_dht11():
+    try:
+        # 读取温度 (单位是毫摄氏度，所以要除以1000)
+        with open(f"{SENSOR_PATH}/in_temp_input", "r") as f:
+            temp = float(f.read().strip()) / 1000.0
+
+        # 读取湿度 (单位是毫百分比，所以要除以1000)
+        with open(f"{SENSOR_PATH}/in_humidityrelative_input", "r") as f:
+            hum = float(f.read().strip()) / 1000.0
+
+        return temp, hum
+    except Exception as e:
+        print(f"读取错误: {e}")
+        return None, None
+
 
 while True:
-    try:
-        # 获取温湿度
-        temperature_c = dhtDevice.temperature
-        humidity = dhtDevice.humidity
+    temperature, humidity = read_dht11()
+    if temperature is not None:
+        print(f"温度: {temperature:.1f}°C, 湿度: {humidity:.1f}%")
+    else:
+        print("传感器读取失败，重试中...")
 
-        print(f"温度: {temperature_c:.1f} C  湿度: {humidity}%")
-
-    except RuntimeError as error:
-        # DHT11 读取经常失败，这是正常的，捕获错误并重试即可
-        print(error.args[0])
-        time.sleep(2.0)
-        continue
-    except Exception as error:
-        dhtDevice.exit()
-        raise error
-
-    time.sleep(2.0)
+    # DHT11 采样率很低，建议间隔至少2秒
+    time.sleep(2)
