@@ -19,6 +19,8 @@ class DisplayManager:
 
             # 在真实场景中，这里会是控制LCD屏幕的代码
             # 现在我们只是打印到控制台
-            print(f"\n[模拟LCD显示] T:{temp}°C  H:{hum}%  S:{smoke:.2f}\n")
+            # 只有当smoke是数字时才使用.2f格式化
+            smoke_str = f"{smoke:.2f}" if isinstance(smoke, (int, float)) else str(smoke)
+            print(f"\n[模拟LCD显示] T:{temp}°C  H:{hum}%  S:{smoke_str}\n")
 
             await asyncio.sleep(settings.DISPLAY_UPDATE_INTERVAL)
