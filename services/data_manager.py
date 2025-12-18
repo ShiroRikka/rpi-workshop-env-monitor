@@ -35,9 +35,7 @@ class DataManager:
             try:
                 # 并发读取所有传感器（无论是真是假）
                 readings = await asyncio.gather(
-                    self.sensors["dht11"].read(),
-                    self.sensors["smoke"].read(),
-                    self.sensors["adc"].read()
+                    self.sensors["dht11"].read(), self.sensors["smoke"].read(), self.sensors["adc"].read()
                 )
 
                 dht11_data, smoke_level, adc_value = readings

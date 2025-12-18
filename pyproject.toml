@@ -5,6 +5,7 @@ description = "车间环境"
 requires-python = ">=3.11"
 dependencies = [
     "adafruit-circuitpython-dht>=4.0.9",
+    "fastapi[all]>=0.125.0",
     "loguru>=0.7.3",
     "rpi-gpio>=0.7.1",
 ]
