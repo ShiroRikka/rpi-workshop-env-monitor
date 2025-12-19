@@ -6,6 +6,8 @@ requires-python = ">=3.11"
 dependencies = [
     "adafruit-circuitpython-dht>=4.0.9",
     "fastapi[all]>=0.125.0",
+    "gpiozero>=2.0.1",
+    "lgpio>=0.2.2.0",
     "loguru>=0.7.3",
     "rpi-gpio>=0.7.1",
 ]
@@ -15,7 +17,7 @@ dependencies = [
 include = ["*.py"]
 
 # 行长度设置
-line-length = 120
+line-length = 88
 
 [tool.ruff.lint]
 fixable = ["ALL"]

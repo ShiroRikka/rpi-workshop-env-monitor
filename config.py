@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+import board
 
 
 class Settings(BaseSettings):
@@ -20,15 +21,15 @@ class Settings(BaseSettings):
 
     # --- 硬件引脚配置 ---
     # 使用 BCM 编码
-    DHT11_PIN: int = 4
-    FAN_RELAY_PIN: int = 18
+    DHT11_PIN: board.pin = board.D24
+    FAN_RELAY_PIN: int = 25
     # 假设烟雾传感器连接到MCP3008的0号通道
     SMOKE_SENSOR_ADC_CHANNEL: int = 0
 
     # --- 控制逻辑阈值 ---
     # 烟雾浓度超过此值时触发风扇
     SMOKE_THRESHOLD: float = 600.0
-
+    TEMPERATURE_THRESHOLD: float = 22
     # --- 数据库配置 ---
     # 数据库文件的路径
     DATABASE_URL: str = "sqlite+pysqlite:///./sensor_data.db"

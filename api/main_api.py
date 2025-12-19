@@ -26,6 +26,8 @@ async def run_server(config):
     import uvicorn
 
     # uvicorn.Server 可以在异步环境中运行
-    server_config = uvicorn.Config(app, host=config.API_HOST, port=config.API_PORT, log_level="info")
+    server_config = uvicorn.Config(
+        app, host=config.API_HOST, port=config.API_PORT, log_level="info"
+    )
     server = uvicorn.Server(server_config)
     await server.serve()
