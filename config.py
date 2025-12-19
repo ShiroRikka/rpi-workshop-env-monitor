@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     TEMPERATURE_THRESHOLD: float = 22
     # --- 数据库配置 ---
     # 数据库文件的路径
-    DATABASE_URL: str = "sqlite+pysqlite:///./sensor_data.db"
+    DATABASE_URL: str = "./data.db"
 
     # --- 日志配置 ---
     LOG_LEVEL: str = "INFO"
