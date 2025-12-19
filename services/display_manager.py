@@ -5,7 +5,7 @@ from .base_manager import BaseManager
 
 
 class DisplayManager(BaseManager):
-    def __init__(self, config, shared_state: dict):
+    def __init__(self, config, shared_state):
         super().__init__(config, shared_state)
         logger.info("DisplayManager: 初始化完成 (模拟模式)")
 

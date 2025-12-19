@@ -11,7 +11,7 @@ from .base_manager import BaseManager
 
 
 class DataManager(BaseManager):
-    def __init__(self, config, shared_state: dict):
+    def __init__(self, config, shared_state):
         super().__init__(config, shared_state)
         self.sensors = self._initialize_sensors()
         self.actuators = self._initialize_actuators()
