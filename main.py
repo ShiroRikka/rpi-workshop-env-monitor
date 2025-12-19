@@ -1,85 +1,65 @@
-import time
-import board
+# main.py
+import asyncio
 from loguru import logger
-from dotenv import load_dotenv
-import os
 
-from devices import DatabaseManager, RpiRelay, RpiDht11, RpiDs18b20, RpiLcd1602, RpiMq2
+# 导入配置
+from config import settings
 
+# 导入共享状态
 
-# 加载环境变量
-load_dotenv()
+# 导入所有需要并发运行的服务
+from services.data_manager import DataManager
+from services.display_manager import DisplayManager
+from api.main_api import run_server
 
-# 数据库配置
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-}
+# from api.main_api import run_server
+from state import shared_state
 
 
-def main():
-    # 初始化数据库
-    db = DatabaseManager(**DB_CONFIG)
+async def main():
+    """
+    主协程：负责初始化和启动所有后台服务
+    """
+    # 1. 配置全局日志
+    # 就像你熟悉的 loguru 一样，在入口点配置一次，全局生效
+    logger.info("=" * 50)
+    logger.info("系统启动中...")
+    logger.info("=" * 50)
 
-    # 初始化传感器和继电器
-    with (
-        RpiDht11(board.D23) as dht11,
-        RpiDs18b20() as ds18b20,
-        RpiRelay(24) as relay,
-        RpiLcd1602() as lcd,
-        RpiMq2() as mq2,
-    ):
-        try:
-            while True:
-                # 读取温湿度数据
-                dht_temperature, humidity = dht11.read()
-                ds18_temperature = ds18b20.read()
-                mq2_value = mq2.read_analog()
-                # 在LCD1602上显示温湿度
-                if (
-                    dht_temperature is not None
-                    and humidity is not None
-                    and mq2_value is not None
-                ):
-                    lcd.clear()
-                    # 格式化显示字符串，保留一位小数
-                    temp_str = f"T:{dht_temperature:.1f}C"
-                    humi_str = f"H:{humidity:.1f}%"
-                    mp2_str = f"Y:{mq2_value:.1f}ppm"
-                    lcd.write(0, 0, temp_str)
-                    lcd.write(0, 1, humi_str)
-                    lcd.write(8, 0, mp2_str)
-                else:
-                    lcd.clear()
-                    lcd.write(0, 0, "Sensor Read Error")
-                    lcd.write(0, 1, "Check DHT11!")
-                    lcd.write(8, 0, "X")
+    # 2. 初始化所有服务
+    # 我们将共享状态和配置传递给需要它们的模块
+    data_manager = DataManager(settings, shared_state)
+    display_manager = DisplayManager(settings, shared_state)
 
-                # 插入数据库
-                if (
-                    ds18_temperature is not None
-                    and humidity is not None
-                    and mq2_value is not None
-                ):
-                    db.insert_env_data(ds18_temperature, humidity, mq2_value)
+    try:
+        await data_manager.db.initialize()
+        logger.info("数据库初始化成功")
+    except Exception as e:
+        logger.critical(f"数据库初始化失败:{e}")
+        return
 
-                # 根据温度控制继电器（示例逻辑：温度高于25度时开启继电器）
-                if dht_temperature is not None:
-                    if dht_temperature > 25:
-                        relay.on()
-                    else:
-                        relay.off()
+    # 3. 使用 asyncio.gather 并发运行所有长期任务
+    # 这就是你之前理解的精髓！
+    # 每个任务都是一个独立的、长期运行的“串行链”
+    # 它们会在同一个事件循环中并发执行，互不阻塞
+    logger.info("正在启动所有核心任务...")
+    try:
+        await asyncio.gather(
+            data_manager.run(),  # 任务1: 数据采集与控制循环
+            display_manager.run(),  # 任务2: 屏幕显示更新循环
+            run_server(settings, data_manager.db),  # 任务3: FastAPI Web服务
+        )
+    except Exception as e:
+        logger.critical(f"某个核心服务发生致命错误，程序即将退出: {e}")
 
-                # 等待2秒后继续下一次读取
-                time.sleep(2)
-
-        except KeyboardInterrupt:
-            logger.info("用户终止程序")
-        except Exception as e:
-            logger.exception(f"运行时出错: {e}")
+    logger.info("所有任务已结束。")
 
 
 if __name__ == "__main__":
-    main()
+    # asyncio.run() 是启动整个异步应用的官方推荐方式
+    # 它会创建一个新的事件循环，运行 main() 直到完成，然后清理循环
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        # 捕获 Ctrl+C，实现优雅退出
+        logger.info("程序被用户中断，正在安全关闭...")
