@@ -3,15 +3,15 @@ from loguru import logger
 from hardware.dht11_sensor import DHT11Sensor
 from hardware.mock_sensors import MockSmokeSensor, MockADCSensor
 from hardware.actuators import Relay
+from .base_manager import BaseManager
 # 未来，你只需要把下面的 import 换成真实的
 # from hardware.smoke_sensor import RealSmokeSensor
 # from hardware.adc_sensor import RealADCSensor
 
 
-class DataManager:
+class DataManager(BaseManager):
     def __init__(self, config, shared_state: dict):
-        self.config = config
-        self.shared_state = shared_state
+        super().__init__(config, shared_state)
         self.sensors = self._initialize_sensors()
         self.actuators = self._initialize_actuators()
         # ... 其他初始化 ...

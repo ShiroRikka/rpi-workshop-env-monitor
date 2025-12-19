@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 
 class BaseActuator(ABC):
+    """所有执行器的抽象基类"""
+
     def __init__(self, pin: int):
         self.pin = pin
         self._is_on = False

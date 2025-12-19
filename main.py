@@ -28,7 +28,7 @@ async def main():
     # 2. 初始化所有服务
     # 我们将共享状态和配置传递给需要它们的模块
     data_manager = DataManager(settings, shared_state)
-    display_manager = DisplayManager()
+    display_manager = DisplayManager(settings, shared_state)
 
     # 3. 使用 asyncio.gather 并发运行所有长期任务
     # 这就是你之前理解的精髓！

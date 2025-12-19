@@ -1,12 +1,12 @@
 # services/display_manager.py
 import asyncio
 from loguru import logger
-from state import shared_state
-from config import settings
+from .base_manager import BaseManager
 
 
-class DisplayManager:
-    def __init__(self):
+class DisplayManager(BaseManager):
+    def __init__(self, config, shared_state: dict):
+        super().__init__(config, shared_state)
         logger.info("DisplayManager: 初始化完成 (模拟模式)")
 
     async def run(self):
@@ -14,9 +14,9 @@ class DisplayManager:
         logger.info("DisplayManager: 开始屏幕更新循环...")
         while True:
             # 从共享状态读取数据并“显示”它
-            temp = shared_state.get("temperature", "N/A")
-            hum = shared_state.get("humidity", "N/A")
-            smoke = shared_state.get("smoke_level", "N/A")
+            temp = self.shared_state.get("temperature", "N/A")
+            hum = self.shared_state.get("humidity", "N/A")
+            smoke = self.shared_state.get("smoke_level", "N/A")
 
             # 在真实场景中，这里会是控制LCD屏幕的代码
             # 现在我们只是打印到控制台
@@ -26,4 +26,4 @@ class DisplayManager:
             )
             logger.info(f"\n[模拟LCD显示] T:{temp}°C  H:{hum}%  S:{smoke_str}\n")
 
-            await asyncio.sleep(settings.DISPLAY_UPDATE_INTERVAL)
+            await asyncio.sleep(self.config.DISPLAY_UPDATE_INTERVAL)
