@@ -28,8 +28,7 @@ class DataManager(BaseManager):
 
     def _initialize_actuators(self):
         actuators = {}
-        fan_relay = Relay(self.config.FAN_RELAY_PIN)
-        actuators["fan"] = fan_relay
+        actuators["fan"] = Relay(self.config.FAN_RELAY_PIN)
         return actuators
 
     async def run(self):

@@ -8,7 +8,7 @@ from loguru import logger
 class Relay(BaseActuator):
     def __init__(self, pin=board.pin):
         super().__init__(pin)
-        self.device = DigitalOutputDevice(pin, active_high=False, initial_value=False)
+        self.device = DigitalOutputDevice(pin, active_high=True, initial_value=False)
         self._is_on = self.device.value
 
     async def turn_on(self) -> None:

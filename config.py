@@ -14,10 +14,10 @@ class Settings(BaseSettings):
 
     # --- 数据采集配置 ---
     # 传感器数据采集间隔（秒）
-    DATA_COLLECTION_INTERVAL: int = 5
+    DATA_COLLECTION_INTERVAL: int = 3
 
     # LCD屏幕刷新间隔（秒）
-    DISPLAY_UPDATE_INTERVAL: int = 1
+    DISPLAY_UPDATE_INTERVAL: int = 3
 
     # --- 硬件引脚配置 ---
     # 使用 BCM 编码

@@ -1,5 +1,4 @@
 from .base_sensor import BaseSensor
-import asyncio
 import adafruit_dht
 import board
 
@@ -16,5 +15,4 @@ class DHT11Sensor(BaseSensor):
             self._value = {"temperature": temperature, "humidity": humidity}
         else:
             return None
-        await asyncio.sleep(2)
         return self._value
