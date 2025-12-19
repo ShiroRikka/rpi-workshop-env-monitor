@@ -14,11 +14,11 @@ class MockSmokeSensor(BaseSensor):
         return self._value
 
 
-class MockADCSensor(BaseSensor):
-    """模拟ADC传感器（用于读取模拟信号）"""
+# class MockADCSensor(BaseSensor):
+#     """模拟ADC传感器（用于读取模拟信号）"""
 
-    async def read(self):
-        await asyncio.sleep(0.05)
-        # 模拟一个0-1023之间的ADC值
-        self._value = random.randint(0, 1023)
-        return self._value
+#     async def read(self):
+#         await asyncio.sleep(0.05)
+#         # 模拟一个0-1023之间的ADC值
+#         self._value = random.randint(0, 1023)
+#         return self._value

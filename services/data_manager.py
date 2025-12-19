@@ -1,8 +1,9 @@
 import asyncio
 from loguru import logger
 from hardware.dht11_sensor import DHT11Sensor
-from hardware.mock_sensors import MockSmokeSensor, MockADCSensor
+from hardware.mock_sensors import MockSmokeSensor
 from hardware.actuators import Relay
+from database.db import Database
 from .base_manager import BaseManager
 # 未来，你只需要把下面的 import 换成真实的
 # from hardware.smoke_sensor import RealSmokeSensor
@@ -14,6 +15,7 @@ class DataManager(BaseManager):
         super().__init__(config, shared_state)
         self.sensors = self._initialize_sensors()
         self.actuators = self._initialize_actuators()
+        self.db = Database(self.config.DATABASE_URL)
         # ... 其他初始化 ...
 
     def _initialize_sensors(self):
@@ -23,7 +25,6 @@ class DataManager(BaseManager):
 
         # 其他传感器还没到，我们创建模拟实例
         sensors["smoke"] = MockSmokeSensor(pin=0)
-        sensors["adc"] = MockADCSensor(pin=0)
         return sensors
 
     def _initialize_actuators(self):
@@ -43,16 +44,6 @@ class DataManager(BaseManager):
                     self.sensors["adc"].read(),
                 )
 
-                # 更新共享状态
-                self.shared_state.update(
-                    {
-                        "temperature": dht11_data["temperature"],
-                        "humidity": dht11_data["humidity"],
-                        "smoke_level": smoke_level,
-                        "adc_value": adc_value,
-                    }
-                )
-
                 # 执行控制逻辑
                 fan = self.actuators["fan"]
                 if self.shared_state["temperature"] > self.config.TEMPERATURE_THRESHOLD:
@@ -63,7 +54,21 @@ class DataManager(BaseManager):
                         await fan.turn_off()
 
                 # 更新共享状态
-                self.shared_state["fan_on"] = fan._is_on
+                self.shared_state.update(
+                    {
+                        "temperature": dht11_data["temperature"],
+                        "humidity": dht11_data["humidity"],
+                        "smoke_level": smoke_level,
+                        "fan_on": fan._is_on,
+                    }
+                )
+
+                await self.db.insert_reading(
+                    temperature=dht11_data["temperature"],
+                    humidity=dht11_data["humidity"],
+                    smoke_level=smoke_level,
+                    fan_on=fan._is_on,
+                )
 
                 logger.info(
                     f"采集到数据: T={dht11_data['temperature']:.1f}°C,H={dht11_data['humidity']:.1f}%, S={smoke_level:.2f}, 风扇状态: {'开启' if fan._is_on else '关闭'}"

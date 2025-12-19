@@ -30,6 +30,13 @@ async def main():
     data_manager = DataManager(settings, shared_state)
     display_manager = DisplayManager(settings, shared_state)
 
+    try:
+        await data_manager.db.initialize()
+        logger.info("数据库初始化成功")
+    except Exception as e:
+        logger.critical(f"数据库初始化失败:{e}")
+        return
+
     # 3. 使用 asyncio.gather 并发运行所有长期任务
     # 这就是你之前理解的精髓！
     # 每个任务都是一个独立的、长期运行的“串行链”
