@@ -13,6 +13,6 @@ class DHT11Sensor(BaseSensor):
         humidity = self.dht_device.humidity
         if temperature is not None and humidity is not None:
             self._value = {"temperature": temperature, "humidity": humidity}
+            return self._value
         else:
             return None
-        return self._value

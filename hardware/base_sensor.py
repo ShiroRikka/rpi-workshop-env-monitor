@@ -6,7 +6,7 @@ class BaseSensor(ABC):
 
     def __init__(self, pin: int):
         self.pin = pin
-        self._value = None
+        self._value: float | dict[str, int | float] | None = None
 
     @abstractmethod
     async def read(self) -> float | dict[str, int | float] | None:
