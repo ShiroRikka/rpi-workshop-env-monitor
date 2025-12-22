@@ -3,10 +3,10 @@ from loguru import logger
 
 # 导入传感器类
 from hardware.dht11_sensor import DHT11Sensor
-from hardware.ds18b20_sensor import DS18B20Sensor
 
-# from hardware.smoke_sensor import RealSmokeSensor
-# from hardware.adc_sensor import RealADCSensor
+# from hardware.ds18b20_sensor import DS18B20Sensor
+from hardware.mock_sensors import MockSmokeSensor, MockTempSensor
+
 # 导入执行器类
 from hardware.actuators import Relay
 
@@ -29,30 +29,39 @@ class DataManager(BaseManager):
         while True:
             try:
                 # 并发读取所有传感器
-                dht11_data, ds18b20_temperature = await asyncio.gather(
+                dht11_data, mock_smoke_data, mock_temp_data = await asyncio.gather(
                     self.sensors["dht11"].read(),
-                    self.sensors["ds18b20"].read(),
+                    # self.sensors["ds18b20"].read(),
                     # self.sensors["smoke"].read(),
+                    self.sensors["mock_smoke"].read(),
+                    self.sensors["mock_temp"].read(),
                 )
 
                 # 执行控制逻辑
-                await self._control_fan(ds18b20_temperature)
+                await self._control_fan(mock_temp_data)
 
                 # 更新共享状态
                 self._shared_state.update(
                     {
-                        "temperature": ds18b20_temperature,
+                        "temperature": mock_temp_data,
                         "humidity": dht11_data,
+                        "smoke_level": mock_smoke_data,
                         "fan_on": self.actuators["fan"]._is_on,
                     }
                 )
 
                 # 保存数据到数据库
-                await self._save_sensor_data(dht11_data, ds18b20_temperature)
+                await self._save_sensor_data(
+                    temp=mock_temp_data,
+                    humidity=dht11_data,
+                    smoke_level=mock_smoke_data,
+                    fan_on=self.actuators["fan"]._is_on,
+                )
 
                 logger.info(
-                    f"采集到数据: T={ds18b20_temperature:.1f}°C,"
+                    f"采集到数据: T={mock_temp_data:.1f}°C,"
                     f"H={dht11_data:.1f}%, "
+                    f"烟雾={mock_smoke_data:.2f}, "
                     f"风扇状态: {'开启' if self.actuators['fan']._is_on else '关闭'}"
                 )
 
@@ -67,7 +76,9 @@ class DataManager(BaseManager):
             "dht11": DHT11Sensor(
                 pin=self._config.DHT11_PIN, mode=self._config.DHT11_MODE
             ),
-            "ds18b20": DS18B20Sensor(device_id=self._config.DS18B20_DEVICE_ID),
+            # "ds18b20": DS18B20Sensor(device_id=self._config.DS18B20_DEVICE_ID),
+            "mock_smoke": MockSmokeSensor(),
+            "mock_temp": MockTempSensor(),
         }
 
     def _initialize_actuators(self):
@@ -92,7 +103,11 @@ class DataManager(BaseManager):
             )
 
     async def _save_sensor_data(
-        self, temp: float = None, humidity: float = None, smoke_level: float = None
+        self,
+        temp: float = None,
+        humidity: float = None,
+        smoke_level: float = None,
+        fan_on: bool = False,
     ):
         """保存传感器数据到数据库"""
         try:
@@ -100,7 +115,7 @@ class DataManager(BaseManager):
                 temperature=temp,
                 humidity=humidity,
                 smoke_level=smoke_level,
-                fan_on=self.actuators["fan"]._is_on,
+                fan_on=fan_on,
             )
         except Exception as e:
             logger.error(f"保存传感器数据到数据库失败: {e}")

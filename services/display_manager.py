@@ -26,4 +26,4 @@ class DisplayManager(BaseManager):
             )
             logger.info(f"\n[模拟LCD显示] T:{temp}°C  H:{hum}%  S:{smoke_str}\n")
 
-            await asyncio.sleep(self.config.DISPLAY_UPDATE_INTERVAL)
+            await asyncio.sleep(self._config.DISPLAY_UPDATE_INTERVAL)
