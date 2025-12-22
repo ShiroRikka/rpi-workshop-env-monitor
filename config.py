@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "./data.db"
 
     # 日志配置
-    LOG_LEVEL: str = "DEBUG"
+    LOG_LEVEL: str = "INFO"
     LOG_PATH: any = sys.stderr
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

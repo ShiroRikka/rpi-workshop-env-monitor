@@ -35,7 +35,7 @@ async def main():
 
     try:
         await data_manager.db.initialize()
-        logger.info("数据库初始化成功")
+        logger.success("数据库初始化成功")
     except Exception as e:
         logger.critical(f"数据库初始化失败:{e}")
         return
