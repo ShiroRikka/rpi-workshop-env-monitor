@@ -58,7 +58,7 @@ class DataManager(BaseManager):
                     fan_on=self.actuators["fan"]._is_on,
                 )
 
-                logger.info(
+                logger.debug(
                     f"采集到数据: T={mock_temp_data:.1f}°C,"
                     f"H={dht11_data:.1f}%, "
                     f"烟雾={mock_smoke_data:.2f}, "
@@ -92,13 +92,13 @@ class DataManager(BaseManager):
         # 温度超过阈值且风扇未开启，则开启风扇
         if temperature > self._config.TEMPERATURE_THRESHOLD and not fan._is_on:
             await fan.turn_on()
-            logger.info(
+            logger.warning(
                 f"温度 {temperature:.1f}°C 超过阈值 {self._config.TEMPERATURE_THRESHOLD}°C，风扇已开启"
             )
         # 温度低于阈值且风扇已开启，则关闭风扇
         elif temperature <= self._config.TEMPERATURE_THRESHOLD and fan._is_on:
             await fan.turn_off()
-            logger.info(
+            logger.warning(
                 f"温度 {temperature:.1f}°C 低于阈值 {self._config.TEMPERATURE_THRESHOLD}°C，风扇已关闭"
             )
 

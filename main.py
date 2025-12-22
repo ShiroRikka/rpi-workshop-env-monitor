@@ -22,6 +22,8 @@ async def main():
     """
     # 1. 配置全局日志
     # 就像你熟悉的 loguru 一样，在入口点配置一次，全局生效
+    logger.remove()
+    logger.add(sink=settings.LOG_PATH, level=settings.LOG_LEVEL)
     logger.info("=" * 50)
     logger.info("系统启动中...")
     logger.info("=" * 50)
