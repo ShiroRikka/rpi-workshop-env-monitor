@@ -18,7 +18,7 @@ class BaseActuator(ABC):
         """异步关闭执行器"""
         pass
 
-    async def toggle(self):
+    async def toggle(self) -> None:
         """异步切换执行器状态"""
         if self._is_on:
             await self.turn_off()

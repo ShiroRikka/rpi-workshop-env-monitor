@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     FAN_RELAY_PIN: int = 25
     # 假设烟雾传感器连接到MCP3008的0号通道
     SMOKE_SENSOR_ADC_CHANNEL: int = 0
-
+    DHT11_MODE: str = "humid"  # 'temp' 或 'humid'
+    DS18B20_DEVICE_ID: str | None = None  # 替换为实际设备ID
     # --- 控制逻辑阈值 ---
     # 烟雾浓度超过此值时触发风扇
     SMOKE_THRESHOLD: float = 600.0

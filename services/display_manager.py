@@ -14,9 +14,9 @@ class DisplayManager(BaseManager):
         logger.info("DisplayManager: 开始屏幕更新循环...")
         while True:
             # 从共享状态读取数据并“显示”它
-            temp = self.shared_state.get("temperature", "N/A")
-            hum = self.shared_state.get("humidity", "N/A")
-            smoke = self.shared_state.get("smoke_level", "N/A")
+            temp = self._shared_state.get("temperature", "N/A")
+            hum = self._shared_state.get("humidity", "N/A")
+            smoke = self._shared_state.get("smoke_level", "N/A")
 
             # 在真实场景中，这里会是控制LCD屏幕的代码
             # 现在我们只是打印到控制台

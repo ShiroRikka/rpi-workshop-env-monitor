@@ -45,7 +45,11 @@ class Database:
         await self._create_tables()
 
     async def insert_reading(
-        self, temperature: float, humidity: float, smoke_level: float, fan_on: bool
+        self,
+        temperature: float = None,
+        humidity: float = None,
+        smoke_level: float = None,
+        fan_on: bool = False,
     ):
         """插入一条新的传感器读数"""
         if not self.conn:
