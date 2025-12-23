@@ -3,9 +3,8 @@ from loguru import logger
 
 # 导入传感器类
 from hardware.dht11_sensor import DHT11Sensor
-
 from hardware.ds18b20_sensor import DS18B20Sensor
-from hardware.mock_sensors import MockSmokeSensor
+from hardware.mq2_sensor import MQ2Sensor
 
 # 导入执行器类
 from hardware.actuators import Relay
@@ -29,12 +28,10 @@ class DataManager(BaseManager):
         while True:
             try:
                 # 并发读取所有传感器
-                dht11_data, ds18b20_data, mock_smoke_data = await asyncio.gather(
+                dht11_data, ds18b20_data, mq2_data = await asyncio.gather(
                     self.sensors["dht11"].read(),
                     self.sensors["ds18b20"].read(),
-                    # self.sensors["smoke"].read(),
-                    self.sensors["mock_smoke"].read(),
-                    # self.sensors["mock_temp"].read(),
+                    self.sensors["mq2"].read(),
                 )
 
                 # 执行控制逻辑
@@ -45,7 +42,7 @@ class DataManager(BaseManager):
                     {
                         "temperature": ds18b20_data,
                         "humidity": dht11_data,
-                        "smoke_level": mock_smoke_data,
+                        "smoke_level": mq2_data,
                         "fan_on": self.actuators["fan"]._is_on,
                     }
                 )
@@ -54,14 +51,14 @@ class DataManager(BaseManager):
                 await self._save_sensor_data(
                     temp=ds18b20_data,
                     humidity=dht11_data,
-                    smoke_level=mock_smoke_data,
+                    smoke_level=mq2_data,
                     fan_on=self.actuators["fan"]._is_on,
                 )
 
                 logger.info(
                     f"采集到数据: T={ds18b20_data:.1f}°C,"
                     f"H={dht11_data:.1f}%, "
-                    f"烟雾={mock_smoke_data:.2f}, "
+                    f"烟雾={mq2_data:.2f}, "
                     f"风扇状态: {'开启' if self.actuators['fan']._is_on else '关闭'}"
                 )
 
@@ -77,8 +74,7 @@ class DataManager(BaseManager):
                 pin=self._config.DHT11_PIN, mode=self._config.DHT11_MODE
             ),
             "ds18b20": DS18B20Sensor(device_id=self._config.DS18B20_DEVICE_ID),
-            "mock_smoke": MockSmokeSensor(),
-            # "mock_temp": MockTempSensor(),
+            "mq2": MQ2Sensor(channle=self._config.MQ2_CHANNLE),
         }
 
     def _initialize_actuators(self):

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     SMOKE_SENSOR_ADC_CHANNEL: int = 0
     DHT11_MODE: str = "humid"  # 'temp' 或 'humid'
     DS18B20_DEVICE_ID: str | None = None
+    MQ2_CHANNLE: int = 0
 
     # 控制逻辑阈值
     SMOKE_THRESHOLD: float = 600.0
