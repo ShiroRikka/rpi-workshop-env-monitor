@@ -1084,6 +1084,7 @@ dependencies = [
     { name = "lgpio" },
     { name = "loguru" },
     { name = "rpi-gpio" },
+    { name = "smbus" },
 ]
 
 [package.metadata]
@@ -1095,6 +1096,7 @@ requires-dist = [
     { name = "lgpio", specifier = ">=0.2.2.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "rpi-gpio", specifier = ">=0.7.1" },
+    { name = "smbus", specifier = ">=1.1.post2" },
 ]
 
 [[package]]
@@ -1127,6 +1129,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b2
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
 ]
+
+[[package]]
+name = "smbus"
+version = "1.1.post2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/5c/70e14aa4f0c586efc017e1d1aa6e2f7921eefc7602fc2d03368ff912aa91/smbus-1.1.post2.tar.gz", hash = "sha256:f96d345e0aa10053a8a4917634f1dc37ba1f656fa5cace7629b71777e90855c6", size = 104988, upload-time = "2019-03-08T16:25:59.532Z" }
 
 [[package]]
 name = "starlette"
