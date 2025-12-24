@@ -20,7 +20,6 @@ class DataManager(BaseManager):
         self.sensors = self._initialize_sensors()
         self.actuators = self._initialize_actuators()
         self.db = Database(self._config.DATABASE_URL)
-        # ... 其他初始化 ...
 
     async def run(self):
         """主循环，持续采集数据"""
