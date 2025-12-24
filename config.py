@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     DHT11_MODE: str = "humid"  # 'temp' 或 'humid'
     DS18B20_DEVICE_ID: str | None = None
     MQ2_CHANNLE: int = 0
+    FAN_MOTOR_FORWARD: int = 17
+    FAN_MOTOR_BACKWARD: int = 18
+    FAN_MOTOR_ENABLE: int = 19
 
     # 控制逻辑阈值
     SMOKE_THRESHOLD: float = 600.0

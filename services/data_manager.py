@@ -7,7 +7,7 @@ from hardware.ds18b20_sensor import DS18B20Sensor
 from hardware.mq2_sensor import MQ2Sensor
 
 # 导入执行器类
-from hardware.actuators import Relay
+from hardware.actuators import RpiMotor
 
 # 导入其他类
 from database.db import Database
@@ -78,7 +78,13 @@ class DataManager(BaseManager):
 
     def _initialize_actuators(self):
         """工厂方法：根据配置创建执行器实例"""
-        return {"fan": Relay(self._config.FAN_RELAY_PIN)}
+        return {
+            "fan": RpiMotor(
+                self._config.FAN_MOTOR_FORWARD,
+                self._config.FAN_MOTOR_BACKWARD,
+                self._config.FAN_MOTOR_ENABLE,
+            )
+        }
 
     async def _control_fan(self, temperature: float):
         """根据温度控制风扇"""
