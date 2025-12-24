@@ -1,13 +1,51 @@
 import time
 import smbus
 
+
 class RpiLcd1602:
     """
     用于通过I2C接口控制LCD1602显示器的类。
     该类封装了与基于PCF8574 I/O扩展器的I2C LCD模块进行通信所需的所有功能。
     """
+
     # I2C设备默认地址
     DEFAULT_ADDRESS = 0x27
+
+    # LCD命令常量
+    LCD_CLEARDISPLAY = 0x01
+    LCD_RETURNHOME = 0x02
+    LCD_ENTRYMODESET = 0x04
+    LCD_DISPLAYCONTROL = 0x08
+    LCD_CURSORSHIFT = 0x10
+    LCD_FUNCTIONSET = 0x20
+    LCD_SETCGRAMADDR = 0x40
+    LCD_SETDDRAMADDR = 0x80
+
+    # 显示控制标志
+    LCD_DISPLAYON = 0x04
+    LCD_DISPLAYOFF = 0x00
+    LCD_CURSORON = 0x02
+    LCD_CURSOROFF = 0x00
+    LCD_BLINKON = 0x01
+    LCD_BLINKOFF = 0x00
+
+    # 功能集标志
+    LCD_8BITMODE = 0x10
+    LCD_4BITMODE = 0x00
+    LCD_2LINE = 0x08
+    LCD_1LINE = 0x00
+    LCD_5x10DOTS = 0x04
+    LCD_5x8DOTS = 0x00
+
+    # I2C控制位
+    BACKLIGHT = 0x08
+    ENABLE = 0x04
+    READ_WRITE = 0x02
+    REGISTER_SELECT = 0x01
+
+    # 显示配置
+    LCD_COLS = 16
+    LCD_ROWS = 2
 
     def __init__(self, address=DEFAULT_ADDRESS, backlight_on=True, bus_num=1):
         """
@@ -21,10 +59,11 @@ class RpiLcd1602:
         :type bus_num: int
         """
         self.addr = address
-        self.bus = smbus.SMBus(bus_num)
+        self.bus = None
         self.backlight_on = backlight_on
-      
+
         try:
+            self.bus = smbus.SMBus(bus_num)
             self._init_display()
         except Exception as e:
             self.close()
@@ -39,10 +78,24 @@ class RpiLcd1602:
         :type data: int
         """
         if self.backlight_on:
-            data |= 0x08  # 设置背光开启位
+            data |= self.BACKLIGHT
         else:
-            data &= 0xF7  # 设置背光关闭位
+            data &= ~self.BACKLIGHT
         self.bus.write_byte(self.addr, data)
+
+    def _send_4bits(self, data):
+        """
+        发送4位数据到LCD。
+
+        :param data: 要发送的4位数据。
+        :type data: int
+        """
+        data |= self.ENABLE
+        self._write_word(data)
+        time.sleep(0.001)  # 减少延时，提高时序精度
+        data &= ~self.ENABLE
+        self._write_word(data)
+        time.sleep(0.001)  # 添加延时确保稳定
 
     def _send_command(self, comm):
         """
@@ -53,21 +106,11 @@ class RpiLcd1602:
         :param comm: 要发送的命令字节。
         :type comm: int
         """
-        # 发送高4位
-        buf = comm & 0xF0
-        buf |= 0x04  # RS=0, RW=0, EN=1
-        self._write_word(buf)
-        time.sleep(0.002)
-        buf &= 0xFB  # EN=0
-        self._write_word(buf)
-
+        # 发送高4位，确保RS=0（命令模式）
+        self._send_4bits(comm & 0xF0)
         # 发送低4位
-        buf = (comm & 0x0F) << 4
-        buf |= 0x04  # RS=0, RW=0, EN=1
-        self._write_word(buf)
-        time.sleep(0.002)
-        buf &= 0xFB  # EN=0
-        self._write_word(buf)
+        self._send_4bits((comm << 4) & 0xF0)
+        time.sleep(0.001)  # 命令间添加延时
 
     def _send_data(self, data):
         """
@@ -78,24 +121,18 @@ class RpiLcd1602:
         :param data: 要发送的字符数据。
         :type data: int
         """
-        # 发送高4位
-        buf = data & 0xF0
-        buf |= 0x05  # RS=1, RW=0, EN=1
-        self._write_word(buf)
-        time.sleep(0.002)
-        buf &= 0xFB  # EN=0
-        self._write_word(buf)
-
+        # 发送高4位，确保RS=1（数据模式）
+        self._send_4bits((data & 0xF0) | self.REGISTER_SELECT)
         # 发送低4位
-        buf = (data & 0x0F) << 4
-        buf |= 0x05  # RS=1, RW=0, EN=1
-        self._write_word(buf)
-        time.sleep(0.002)
-        buf &= 0xFB  # EN=0
-        self._write_word(buf)
+        self._send_4bits(((data << 4) & 0xF0) | self.REGISTER_SELECT)
+        time.sleep(0.001)  # 数据间添加延时
 
     def _init_display(self):
         """执行LCD的初始化序列。"""
+        # 等待LCD上电稳定
+        time.sleep(0.05)
+
+        # 初始化序列，按照HD44780规范
         self._send_command(0x33)  # 初始化到8线模式
         time.sleep(0.005)
         self._send_command(0x32)  # 初始化为4线模式
@@ -104,12 +141,13 @@ class RpiLcd1602:
         time.sleep(0.005)
         self._send_command(0x0C)  # 开启显示, 无光标, 无闪烁
         time.sleep(0.005)
-        self.clear()              # 清除显示
+        self.clear()  # 清除显示
 
     def close(self):
         """关闭I2C总线连接。"""
-        if hasattr(self, 'bus'):
+        if self.bus is not None:
             self.bus.close()
+            self.bus = None
 
     def __enter__(self):
         """支持 'with' 语句，返回实例本身。"""
@@ -121,8 +159,8 @@ class RpiLcd1602:
 
     def clear(self):
         """清空屏幕并将光标移至左上角（0, 0）。"""
-        self._send_command(0x01)
-        time.sleep(0.002) # 清屏命令需要较长时间
+        self._send_command(self.LCD_CLEARDISPLAY)
+        time.sleep(0.003)  # 清屏命令需要较长时间，增加延时
 
     def set_backlight(self, state):
         """
@@ -134,11 +172,28 @@ class RpiLcd1602:
         if self.backlight_on != state:
             self.backlight_on = state
             # 重新发送显示控制命令以刷新背光状态
-            display_ctrl = 0x08  # Display off, Cursor off, Blink off
+            display_ctrl = self.LCD_DISPLAYCONTROL
             if self.backlight_on:
-                display_ctrl |= 0x04  # Display on
+                display_ctrl |= self.LCD_DISPLAYON
             self._send_command(display_ctrl)
-          
+
+    def set_cursor(self, x, y):
+        """
+        设置光标位置。
+
+        :param x: 列位置 (0-15)。
+        :type x: int
+        :param y: 行位置 (0-1)。
+        :type y: int
+        """
+        # 限制坐标范围
+        x = max(0, min(self.LCD_COLS - 1, x))
+        y = max(0, min(self.LCD_ROWS - 1, y))
+
+        # 计算DDRAM地址
+        addr = self.LCD_SETDDRAMADDR | (0x40 * y + x)
+        self._send_command(addr)
+
     def write(self, x, y, text):
         """
         在指定位置写入字符串。
@@ -153,27 +208,22 @@ class RpiLcd1602:
         if not isinstance(text, str):
             text = str(text)
 
-        # 限制坐标范围
-        x = max(0, min(15, x))
-        y = max(0, min(1, y))
-
-        # 计算DDRAM地址
-        addr = 0x80 + 0x40 * y + x
-        self._send_command(addr)
+        self.set_cursor(x, y)
 
         # 逐个字符发送
         for char in text:
             self._send_data(ord(char))
 
+
 # 程序入口
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         # 使用 'with' 语句可以确保I2C总线被正确关闭
         with RpiLcd1602(address=0x27, backlight_on=True) as lcd:
-            lcd.write(4, 0, 'Hello')
-            lcd.write(7, 1, 'world!')
+            lcd.write(4, 0, "Hello")
+            lcd.write(7, 1, "world!")
             time.sleep(3)
-          
+
             lcd.clear()
             lcd.write(0, 0, "Testing backlight")
             time.sleep(1)
@@ -185,7 +235,7 @@ if __name__ == '__main__':
             lcd.clear()
             lcd.write(0, 0, "Backlight is ON")
             time.sleep(2)
-          
+
     except IOError as e:
         print(f"错误: {e}")
     except KeyboardInterrupt:
