@@ -53,6 +53,7 @@ class DataManager(BaseManager):
                     humidity=dht11_data,
                     smoke_level=mq2_data,
                     fan_on=self.actuators["fan"]._is_on,
+                    fan_speed=self.actuators["fan"]._current_speed,
                 )
 
                 logger.info(
@@ -147,6 +148,7 @@ class DataManager(BaseManager):
         humidity: float = None,
         smoke_level: float = None,
         fan_on: bool = False,
+        fan_speed: float = None,
     ):
         """保存传感器数据到数据库"""
         try:
@@ -155,6 +157,7 @@ class DataManager(BaseManager):
                 humidity=humidity,
                 smoke_level=smoke_level,
                 fan_on=fan_on,
+                fan_speed=fan_speed,
             )
         except Exception as e:
             logger.error(f"保存传感器数据到数据库失败: {e}")
