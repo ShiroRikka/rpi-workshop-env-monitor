@@ -32,7 +32,8 @@ class Database:
             temperature REAL,
             humidity REAL,
             smoke_level REAL,
-            fan_on BOOLEAN
+            fan_on BOOLEAN,
+            fan_speed REAL
         );
         """
         await self.conn.execute(create_table_sql)
@@ -50,18 +51,19 @@ class Database:
         humidity: float = None,
         smoke_level: float = None,
         fan_on: bool = False,
+        fan_speed: float = None,
     ):
         """插入一条新的传感器读数"""
         if not self.conn:
             raise RuntimeError("数据库未连接！")
 
         sql = """
-        INSERT INTO sensor_readings (timestamp, temperature, humidity, smoke_level, fan_on)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO sensor_readings (timestamp, temperature, humidity, smoke_level, fan_on, fan_speed)
+        VALUES (?, ?, ?, ?, ?, ?);
         """
         # 使用 ? 占位符可以防止SQL注入
         await self.conn.execute(
-            sql, (datetime.now(), temperature, humidity, smoke_level, fan_on)
+            sql, (datetime.now(), temperature, humidity, smoke_level, fan_on, fan_speed)
         )
         await self.conn.commit()
         # print("数据已写入数据库。") # 可以注释掉，避免日志过多
