@@ -70,7 +70,7 @@ class RpiLcd1602:
             self.bus = smbus.SMBus(bus_num)
         except Exception as e:
             self.close()
-            raise IOError(f"I2C总线初始化失败: {e}")
+            raise IOError(f"I2C总线初始化失败: {e}") from e
 
     async def initialize(self):
         """异步初始化LCD显示器"""
@@ -80,7 +80,7 @@ class RpiLcd1602:
                 self._initialized = True
             except Exception as e:
                 self.close()
-                raise IOError(f"LCD初始化失败: {e}")
+                raise IOError(f"LCD初始化失败: {e}") from e
 
     def _write_word(self, data):
         """
@@ -315,44 +315,3 @@ class AsyncRpiLcd1602(RpiLcd1602):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.close()
-
-
-# 程序入口
-async def main():
-    """异步主函数示例"""
-    try:
-        # 使用异步上下文管理器
-        async with AsyncRpiLcd1602(
-            address=0x27, backlight_on=True, cols=16, rows=2
-        ) as lcd:
-            await lcd.write(4, 0, "Hello")
-            await lcd.write(7, 1, "world!")
-            await asyncio.sleep(3)
-
-            await lcd.clear()
-            await lcd.write(0, 0, "Testing backlight")
-            await asyncio.sleep(1)
-            print("Turning backlight off...")
-            await lcd.set_backlight(False)
-            await asyncio.sleep(2)
-            print("Turning backlight on...")
-            await lcd.set_backlight(True)
-            await lcd.clear()
-            await lcd.write(0, 0, "Backlight is ON")
-            await asyncio.sleep(2)
-
-            # 测试新的便捷方法
-            await lcd.display_data("Async LCD Test", "Centered Text", clear_first=True)
-            await asyncio.sleep(3)
-
-            await lcd.display_data("Left aligned", "Right aligned  ", clear_first=True)
-            await asyncio.sleep(3)
-
-    except IOError as e:
-        print(f"错误: {e}")
-    except KeyboardInterrupt:
-        print("\n程序被用户中断。")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
