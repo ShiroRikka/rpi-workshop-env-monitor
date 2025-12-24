@@ -73,13 +73,13 @@ class DisplayManager(BaseManager):
             else f"{temp}{degree_symbol}C"
         )
         hum_str = f"{hum:.0f}%" if isinstance(hum, (int, float)) else f"{hum}%"
-        return f"T:{temp_str} H:{hum_str}"
+        return f"T:{temp_str}  H:{hum_str}"  # 添加两个空格确保对齐
 
     def _format_line2(self, smoke, fan_status):
         """格式化第二行显示内容（烟雾和风扇状态）"""
         smoke_str = f"{smoke:.2f}" if isinstance(smoke, (int, float)) else str(smoke)
         fan_str = "on" if fan_status else "off"
-        return f"S:{smoke_str} F:{fan_str}"
+        return f"S:{smoke_str}   F:{fan_str}"  # 添加两个空格确保对齐
 
     async def cleanup(self):
         """清理资源"""
