@@ -65,14 +65,20 @@ class DisplayManager(BaseManager):
 
     def _format_line1(self, temp, hum):
         """格式化第一行显示内容（温度和湿度）"""
-        temp_str = f"{temp:.1f}°C" if isinstance(temp, (int, float)) else f"{temp}°C"
+        # 使用0xDF作为摄氏度符号，这是LCD1602的标准做法
+        degree_symbol = "\xdf"
+        temp_str = (
+            f"{temp:.1f}{degree_symbol}C"
+            if isinstance(temp, (int, float))
+            else f"{temp}{degree_symbol}C"
+        )
         hum_str = f"{hum:.0f}%" if isinstance(hum, (int, float)) else f"{hum}%"
         return f"T:{temp_str} H:{hum_str}"
 
     def _format_line2(self, smoke, fan_status):
         """格式化第二行显示内容（烟雾和风扇状态）"""
         smoke_str = f"{smoke:.2f}" if isinstance(smoke, (int, float)) else str(smoke)
-        fan_str = "开" if fan_status else "关"
+        fan_str = "on" if fan_status else "off"
         return f"S:{smoke_str} F:{fan_str}"
 
     async def cleanup(self):

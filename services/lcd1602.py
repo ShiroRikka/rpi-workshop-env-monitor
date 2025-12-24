@@ -43,6 +43,9 @@ class RpiLcd1602:
     READ_WRITE = 0x02
     REGISTER_SELECT = 0x01
 
+    # 特殊字符
+    DEGREE_SYMBOL = 0xDF  # 摄氏度符号
+
     def __init__(
         self, address=DEFAULT_ADDRESS, backlight_on=True, bus_num=1, cols=16, rows=2
     ):
@@ -273,6 +276,23 @@ class RpiLcd1602:
 
         if line2 is not None:
             await self.write_line(1, line2)
+
+    async def display_temperature(self, temperature, humidity=None, line=0):
+        """
+        便捷方法：显示温度（带摄氏度符号）
+
+        :param temperature: 温度值
+        :type temperature: float
+        :param humidity: 湿度值（可选）
+        :type humidity: float
+        :param line: 显示行号
+        :type line: int
+        """
+        temp_str = f"{temperature:.1f}{chr(self.DEGREE_SYMBOL)}C"
+        if humidity is not None:
+            temp_str += f" H:{humidity:.0f}%"
+
+        await self.write_line(line, temp_str)
 
 
 # 异步上下文管理器支持
