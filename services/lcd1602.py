@@ -1,7 +1,5 @@
-import time
 import smbus
 import asyncio
-from typing import Optional
 
 
 class RpiLcd1602:
@@ -45,11 +43,9 @@ class RpiLcd1602:
     READ_WRITE = 0x02
     REGISTER_SELECT = 0x01
 
-    # 显示配置
-    LCD_COLS = 16
-    LCD_ROWS = 2
-
-    def __init__(self, address=DEFAULT_ADDRESS, backlight_on=True, bus_num=1):
+    def __init__(
+        self, address=DEFAULT_ADDRESS, backlight_on=True, bus_num=1, cols=16, rows=2
+    ):
         """
         初始化LCD1602显示器。
 
@@ -64,6 +60,8 @@ class RpiLcd1602:
         self.bus = None
         self.backlight_on = backlight_on
         self._initialized = False
+        self.LCD_COLS = cols
+        self.LCD_ROWS = rows
 
         try:
             self.bus = smbus.SMBus(bus_num)
@@ -281,6 +279,16 @@ class RpiLcd1602:
 class AsyncRpiLcd1602(RpiLcd1602):
     """支持异步上下文管理器的LCD1602类"""
 
+    def __init__(
+        self,
+        address=RpiLcd1602.DEFAULT_ADDRESS,
+        backlight_on=True,
+        bus_num=1,
+        cols=16,
+        rows=2,
+    ):
+        super().__init__(address, backlight_on, bus_num, cols, rows)
+
     async def __aenter__(self):
         await self.initialize()
         return self
@@ -294,7 +302,9 @@ async def main():
     """异步主函数示例"""
     try:
         # 使用异步上下文管理器
-        async with AsyncRpiLcd1602(address=0x27, backlight_on=True) as lcd:
+        async with AsyncRpiLcd1602(
+            address=0x27, backlight_on=True, cols=16, rows=2
+        ) as lcd:
             await lcd.write(4, 0, "Hello")
             await lcd.write(7, 1, "world!")
             await asyncio.sleep(3)

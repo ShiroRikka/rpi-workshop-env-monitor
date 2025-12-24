@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     DATA_COLLECTION_INTERVAL: int = 3
     DISPLAY_UPDATE_INTERVAL: int = 3
 
+    # LCD显示器配置
+    LCD_ADDRESS: int = 0x27  # I2C地址
+    LCD_BUS_NUM: int = 1  # I2C总线编号
+    LCD_COLS: int = 16  # LCD列数
+    LCD_ROWS: int = 2  # LCD行数
+
     # 硬件引脚配置
     DHT11_PIN: board.pin = board.D24
     FAN_RELAY_PIN: int = 25
