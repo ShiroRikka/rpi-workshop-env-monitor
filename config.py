@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     SMOKE_THRESHOLD: float = 600.0
     TEMPERATURE_THRESHOLD: float = 22.0
 
+    # 风扇变速控制参数
+    FAN_MIN_TEMP: float = 20.0  # 风扇开始转动的最低温度
+    FAN_MAX_TEMP: float = 35.0  # 风扇全速运行的最高温度
+    FAN_MIN_SPEED: float = 0.1  # 最低转速比例 (0.0-1.0)
+    FAN_MAX_SPEED: float = 1.0  # 最高转速比例 (0.0-1.0)
+
     # 数据库配置
     DATABASE_URL: str = "./data.db"
 

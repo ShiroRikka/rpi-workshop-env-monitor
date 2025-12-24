@@ -43,6 +43,7 @@ class DataManager(BaseManager):
                         "humidity": dht11_data,
                         "smoke_level": mq2_data,
                         "fan_on": self.actuators["fan"]._is_on,
+                        "fan_speed": self.actuators["fan"]._current_speed,
                     }
                 )
 
@@ -87,21 +88,58 @@ class DataManager(BaseManager):
         }
 
     async def _control_fan(self, temperature: float):
-        """根据温度控制风扇"""
+        """根据温度控制风扇转速"""
         fan = self.actuators["fan"]
 
-        # 温度超过阈值且风扇未开启，则开启风扇
-        if temperature > self._config.TEMPERATURE_THRESHOLD and not fan._is_on:
-            await fan.turn_on()
-            logger.info(
-                f"温度 {temperature:.1f}°C 超过阈值 {self._config.TEMPERATURE_THRESHOLD}°C，风扇已开启"
-            )
-        # 温度低于阈值且风扇已开启，则关闭风扇
-        elif temperature <= self._config.TEMPERATURE_THRESHOLD and fan._is_on:
-            await fan.turn_off()
-            logger.info(
-                f"温度 {temperature:.1f}°C 低于阈值 {self._config.TEMPERATURE_THRESHOLD}°C，风扇已关闭"
-            )
+        # 计算风扇转速
+        speed = self._calculate_fan_speed(temperature)
+
+        # 如果计算出的转速为0，关闭风扇
+        if speed <= 0:
+            if fan._is_on:
+                await fan.turn_off()
+                logger.info(f"温度 {temperature:.1f}°C 过低，风扇已关闭")
+        else:
+            # 如果风扇已开启，更新转速；否则开启风扇
+            if fan._is_on:
+                await fan.set_speed(speed)
+                logger.info(f"温度 {temperature:.1f}°C，风扇转速更新为 {speed:.1%}")
+            else:
+                await fan.turn_on(speed)
+                logger.info(
+                    f"温度 {temperature:.1f}°C，风扇已开启，转速设置为 {speed:.1%}"
+                )
+
+    def _calculate_fan_speed(self, temperature: float) -> float:
+        """根据温度计算风扇转速
+
+        使用线性映射关系：
+        - 温度 <= FAN_MIN_TEMP: 转速为 0 (关闭)
+        - FAN_MIN_TEMP < 温度 < FAN_MAX_TEMP: 线性插值
+        - 温度 >= FAN_MAX_TEMP: 转速为 FAN_MAX_SPEED
+        """
+        # 温度低于最低阈值，风扇不转动
+        if temperature <= self._config.FAN_MIN_TEMP:
+            return 0.0
+
+        # 温度高于最高阈值，风扇全速运转
+        if temperature >= self._config.FAN_MAX_TEMP:
+            return self._config.FAN_MAX_SPEED
+
+        # 在温度范围内线性插值计算转速
+        temp_range = self._config.FAN_MAX_TEMP - self._config.FAN_MIN_TEMP
+        temp_offset = temperature - self._config.FAN_MIN_TEMP
+        speed_range = self._config.FAN_MAX_SPEED - self._config.FAN_MIN_SPEED
+
+        # 计算当前温度对应的转速比例
+        speed_ratio = temp_offset / temp_range
+        calculated_speed = self._config.FAN_MIN_SPEED + (speed_ratio * speed_range)
+
+        # 确保转速在有效范围内
+        return max(
+            self._config.FAN_MIN_SPEED,
+            min(calculated_speed, self._config.FAN_MAX_SPEED),
+        )
 
     async def _save_sensor_data(
         self,

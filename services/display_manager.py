@@ -47,10 +47,11 @@ class DisplayManager(BaseManager):
                 hum = self._shared_state.get("humidity", "N/A")
                 smoke = self._shared_state.get("smoke_level", "N/A")
                 fan_status = self._shared_state.get("fan_on", False)
+                fan_speed = self._shared_state.get("fan_speed", 0.0)
 
                 # 格式化显示数据
                 line1 = self._format_line1(temp, hum)
-                line2 = self._format_line2(smoke, fan_status)
+                line2 = self._format_line2(smoke, fan_status, fan_speed)
 
                 # 使用真实LCD显示
                 await self.lcd.display_data(line1, line2, clear_first=True)
@@ -75,10 +76,16 @@ class DisplayManager(BaseManager):
         hum_str = f"{hum:.0f}%" if isinstance(hum, (int, float)) else f"{hum}%"
         return f"T:{temp_str}  H:{hum_str}"  # 添加两个空格确保对齐
 
-    def _format_line2(self, smoke, fan_status):
-        """格式化第二行显示内容（烟雾和风扇状态）"""
+    def _format_line2(self, smoke, fan_status, fan_speed):
+        """格式化第二行显示内容（烟雾和风扇转速）"""
         smoke_str = f"{smoke:.2f}" if isinstance(smoke, (int, float)) else str(smoke)
-        fan_str = "on" if fan_status else "off"
+
+        # 显示风扇转速百分比，如果风扇关闭则显示"off"
+        if fan_status and isinstance(fan_speed, (int, float)):
+            fan_str = f"{fan_speed:.0%}"  # 显示为百分比，如50%
+        else:
+            fan_str = "off"
+
         return f"S:{smoke_str}   F:{fan_str}"  # 添加两个空格确保对齐
 
     async def cleanup(self):
