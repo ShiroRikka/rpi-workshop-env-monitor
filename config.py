@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     LCD_ROWS: int = 2  # LCD行数
 
     # 硬件引脚配置
-    DHT11_PIN: board.pin = board.D24
+    DHT11_PIN: board.pin = board.D24  # DHT11需要board.pin对象
     FAN_RELAY_PIN: int = 25
     SMOKE_SENSOR_ADC_CHANNEL: int = 0
     DHT11_MODE: str = "humid"  # 'temp' 或 'humid'
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     FAN_MOTOR_FORWARD: int = 17
     FAN_MOTOR_BACKWARD: int = 18
     FAN_MOTOR_ENABLE: int = 19
-    WARNING_PIN: board.pin = board.D22
+    WARNING_PIN: int = 22  # gpiozero使用BCM引脚号
 
     # 控制逻辑阈值
     SMOKE_THRESHOLD: float = 600.0

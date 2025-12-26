@@ -1,12 +1,11 @@
 from .base_actuator import BaseActuator
-import board
 from gpiozero import DigitalOutputDevice, Motor
 import asyncio
 from loguru import logger
 
 
 class RpiRelay(BaseActuator):
-    def __init__(self, pin=board.pin):
+    def __init__(self, pin):
         super().__init__(pin)
         self.device = DigitalOutputDevice(pin, active_high=True, initial_value=False)
         self._is_on = self.device.value
@@ -26,6 +25,7 @@ class RpiRelay(BaseActuator):
 
 class RpiMotor(BaseActuator):
     def __init__(self, forward_pin: int, backward_pin: int, enable_pin: int):
+        super().__init__(forward_pin)
         self.device = Motor(
             forward=forward_pin, backward=backward_pin, enable=enable_pin, pwm=True
         )
