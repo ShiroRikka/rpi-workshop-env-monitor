@@ -9,18 +9,77 @@ class RpiRelay(BaseActuator):
         super().__init__(pin)
         self.device = DigitalOutputDevice(pin, active_high=True, initial_value=False)
         self._is_on = self.device.value
+        self._blink_task = None
+        self._blink_enabled = False
+        self._blink_interval = 0.5
+        self._blink_duty_cycle = 0.5
+
+    def configure_blink(
+        self, enabled: bool, interval: float = 0.5, duty_cycle: float = 0.5
+    ):
+        """配置闪烁参数
+
+        Args:
+            enabled: 是否启用闪烁模式
+            interval: 闪烁间隔（秒）
+            duty_cycle: 闪烁占空比（0.0-1.0），1.0表示常亮
+        """
+        self._blink_enabled = enabled
+        self._blink_interval = interval
+        self._blink_duty_cycle = max(0.0, min(1.0, duty_cycle))  # 确保在有效范围内
 
     async def turn_on(self) -> None:
-        await asyncio.to_thread(self.device.on)
-        self._is_on = True
-        logger.debug("报警已开启")
+        if self._blink_enabled:
+            # 启动闪烁任务
+            if self._blink_task is None or self._blink_task.done():
+                self._is_on = True
+                self._blink_task = asyncio.create_task(self._blink_loop())
+                logger.debug("报警闪烁已开启")
+        else:
+            # 常规开启
+            await asyncio.to_thread(self.device.on)
+            self._is_on = True
+            logger.debug("报警已开启")
         return None
 
     async def turn_off(self) -> None:
+        # 停止闪烁任务
+        if self._blink_task and not self._blink_task.done():
+            self._blink_task.cancel()
+            try:
+                await self._blink_task
+            except asyncio.CancelledError:
+                pass
+            self._blink_task = None
+
+        # 确保设备关闭
         await asyncio.to_thread(self.device.off)
         self._is_on = False
         logger.debug("报警已关闭")
         return None
+
+    async def _blink_loop(self):
+        """闪烁循环任务"""
+        try:
+            while True:
+                # 计算开启和关闭时间
+                on_time = self._blink_interval * self._blink_duty_cycle
+                off_time = self._blink_interval * (1 - self._blink_duty_cycle)
+
+                # 开启阶段
+                if on_time > 0:
+                    await asyncio.to_thread(self.device.on)
+                    await asyncio.sleep(on_time)
+
+                # 关闭阶段
+                if off_time > 0:
+                    await asyncio.to_thread(self.device.off)
+                    await asyncio.sleep(off_time)
+
+        except asyncio.CancelledError:
+            # 任务被取消时确保设备关闭
+            await asyncio.to_thread(self.device.off)
+            raise
 
 
 class RpiMotor(BaseActuator):

@@ -59,12 +59,23 @@ class DataManager(BaseManager):
                     warning_on=self.actuators["warning"]._is_on,
                 )
 
+                warning_status = "开启"
+                if (
+                    self.actuators["warning"]._is_on
+                    and self._config.WARNING_BLINK_ENABLED
+                ):
+                    warning_status += "(闪烁)"
+                elif self.actuators["warning"]._is_on:
+                    warning_status += "(常亮)"
+                else:
+                    warning_status = "关闭"
+
                 logger.info(
                     f"采集到数据: T={ds18b20_data:.1f}°C,"
                     f"H={dht11_data:.1f}%, "
                     f"烟雾={mq2_data:.2f}, "
                     f"风扇状态: {'开启' if self.actuators['fan']._is_on else '关闭'}, "
-                    f"报警状态: {'开启' if self.actuators['warning']._is_on else '关闭'}"
+                    f"报警状态: {warning_status}"
                 )
 
             except Exception as e:
@@ -84,13 +95,21 @@ class DataManager(BaseManager):
 
     def _initialize_actuators(self):
         """工厂方法：根据配置创建执行器实例"""
+        warning_relay = RpiRelay(self._config.WARNING_PIN)
+        # 配置闪烁参数
+        warning_relay.configure_blink(
+            enabled=self._config.WARNING_BLINK_ENABLED,
+            interval=self._config.WARNING_BLINK_INTERVAL,
+            duty_cycle=self._config.WARNING_BLINK_DUTY_CYCLE,
+        )
+
         return {
             "fan": RpiMotor(
                 self._config.FAN_MOTOR_FORWARD,
                 self._config.FAN_MOTOR_BACKWARD,
                 self._config.FAN_MOTOR_ENABLE,
             ),
-            "warning": RpiRelay(self._config.WARNING_PIN),
+            "warning": warning_relay,
         }
 
     async def _control_fan(self, temperature: float):
@@ -155,8 +174,9 @@ class DataManager(BaseManager):
         if temperature > self._config.TEMPERATURE_THRESHOLD:
             if not warning._is_on:
                 await warning.turn_on()
+                mode = "闪烁" if self._config.WARNING_BLINK_ENABLED else "常亮"
                 logger.info(
-                    f"温度 {temperature:.1f}°C 超过阈值 {self._config.TEMPERATURE_THRESHOLD}°C，报警已开启"
+                    f"温度 {temperature:.1f}°C 超过阈值 {self._config.TEMPERATURE_THRESHOLD}°C，报警已开启({mode}模式)"
                 )
         else:
             if warning._is_on:

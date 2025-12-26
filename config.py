@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     FAN_MIN_SPEED: float = 0.1  # 最低转速比例 (0.0-1.0)
     FAN_MAX_SPEED: float = 1.0  # 最高转速比例 (0.0-1.0)
 
+    # 警报闪烁配置
+    WARNING_BLINK_ENABLED: bool = True  # 是否启用闪烁模式
+    WARNING_BLINK_INTERVAL: float = 0.5  # 闪烁间隔（秒）
+    WARNING_BLINK_DUTY_CYCLE: float = 0.5  # 闪烁占空比（0.0-1.0），1.0表示常亮
+
     # 数据库配置
     DATABASE_URL: str = "./data.db"
 
