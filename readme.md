@@ -6,6 +6,7 @@
 
 - **多传感器监测**：支持DHT11温湿度传感器、DS18B20温度传感器和MQ2烟雾传感器
 - **智能风扇控制**：根据温度自动调节风扇转速，实现温度自适应控制
+- **温度报警系统**：当温度超过阈值时自动触发警报器，支持常亮和闪烁模式
 - **实时数据显示**：通过LCD1602显示屏实时显示环境数据
 - **数据记录**：将传感器数据保存到SQLite数据库，支持历史数据查询
 - **Web API接口**：提供RESTful API，支持远程监控和数据获取
@@ -21,7 +22,8 @@
 │   │   ├── DS18B20温度传感器
 │   │   └── MQ2烟雾传感器
 │   └── 执行器模块
-│       └── 直流电机（风扇控制）
+│       ├── 直流电机（风扇控制）
+│       └── 警报器（温度报警）
 ├── 服务层
 │   ├── 数据管理服务（数据采集与控制）
 │   └── 显示管理服务（LCD显示）
@@ -87,6 +89,23 @@ LCD1602通过I2C接口连接：
   - ENA → GPIO19（PWM控制）
   - 5V → 树莓派5V（电源）
   - GND → 树莓派GND（共地）
+
+### 警报器（Warning）
+
+使用继电器模块控制警报器：
+
+- **继电器模块与树莓派连接**：
+  - VCC → 树莓派5V（电源）
+  - GND → 树莓派GND（共地）
+  - IN → GPIO22（控制信号）
+
+- **警报器与继电器连接**：
+  - 警报器正极 → 继电器常开（NO）端口
+  - 警报器负极 → 继电器公共（COM）端口
+  - 外部电源正极 → 继电器公共（COM）端口（如果警报器需要独立供电）
+  - 外部电源负极 → 警报器负极（如果警报器需要独立供电）
+
+> **注意**：警报器可以配置为常亮模式或闪烁模式，通过配置文件中的 `WARNING_BLINK_ENABLED` 参数控制。
 
 ## 安装与配置
 
@@ -156,6 +175,7 @@ FAN_MOTOR_FORWARD: int = 17                # 风扇正转引脚
 FAN_MOTOR_BACKWARD: int = 18               # 风扇反转引脚
 FAN_MOTOR_ENABLE: int = 19                 # 风扇使能引脚（PWM）
 SMOKE_SENSOR_ADC_CHANNEL: int = 0          # 烟雾传感器ADC通道
+WARNING_PIN: int = 22                      # 警报器控制引脚
 ```
 
 #### 控制逻辑阈值
@@ -169,6 +189,15 @@ FAN_MAX_TEMP: float = 35.0                 # 风扇全速温度
 FAN_MIN_SPEED: float = 0.1                 # 最低转速比例
 FAN_MAX_SPEED: float = 1.0                 # 最高转速比例
 ```
+
+#### 警报器配置
+```python
+WARNING_BLINK_ENABLED: bool = True         # 是否启用闪烁模式
+WARNING_BLINK_INTERVAL: float = 0.5        # 闪烁间隔（秒）
+WARNING_BLINK_DUTY_CYCLE: float = 0.5      # 闪烁占空比（0.0-1.0），1.0表示常亮
+```
+
+警报器控制逻辑在[`services/data_manager.py`](services/data_manager.py:169)中的[`_control_warning()`](services/data_manager.py:169)方法实现，硬件控制在[`hardware/actuators.py`](hardware/actuators.py:7)中的[`RpiRelay`](hardware/actuators.py:7)类实现。
 
 #### 数据库配置
 ```python
@@ -192,6 +221,10 @@ API_PORT=8080
 DATA_COLLECTION_INTERVAL=5
 LOG_LEVEL=DEBUG
 DATABASE_URL=/path/to/database.db
+WARNING_PIN=22
+WARNING_BLINK_ENABLED=true
+WARNING_BLINK_INTERVAL=0.5
+WARNING_BLINK_DUTY_CYCLE=0.5
 ```
 
 ## 使用方法
@@ -213,7 +246,7 @@ python main.py
 
 系统启动后，可以通过以下方式查看数据：
 
-1. **LCD显示屏**：实时显示温度、湿度、烟雾水平和风扇状态
+1. **LCD显示屏**：实时显示温度、湿度、烟雾水平、风扇状态和警报状态
 2. **Web API**：访问 `http://树莓派IP:8000` 获取JSON格式数据
 
 ### API使用说明
@@ -244,7 +277,8 @@ GET /status
   "humidity": 65.2,
   "smoke_level": 450.3,
   "fan_on": true,
-  "fan_speed": 0.45
+  "fan_speed": 0.45,
+  "warning_on": false
 }
 ```
 
@@ -266,7 +300,8 @@ GET /history?limit=100
     "humidity": 65.2,
     "smoke_level": 450.3,
     "fan_on": true,
-    "fan_speed": 0.45
+    "fan_speed": 0.45,
+    "warning_on": false
   },
   ...
 ]
@@ -285,6 +320,19 @@ GET /history?limit=100
 转速比例 = (当前温度 - 最低温度) / (最高温度 - 最低温度)
 实际转速 = 最低转速 + 转速比例 × (最高转速 - 最低转速)
 ```
+
+### 警报器控制逻辑
+
+系统根据温度自动控制警报器：
+
+1. **温度 ≤ TEMPERATURE_THRESHOLD（22.0°C）**：警报器关闭
+2. **温度 > TEMPERATURE_THRESHOLD**：警报器开启
+
+警报器工作模式：
+- **常亮模式**：当 `WARNING_BLINK_ENABLED = False` 时，警报器持续工作
+- **闪烁模式**：当 `WARNING_BLINK_ENABLED = True` 时，警报器按照设定的间隔和占空比闪烁
+  - 闪烁间隔由 `WARNING_BLINK_INTERVAL` 控制（默认0.5秒）
+  - 闪烁占空比由 `WARNING_BLINK_DUTY_CYCLE` 控制（默认0.5，即50%时间开启）
 
 ## 故障排除
 
@@ -330,7 +378,19 @@ GET /history?limit=100
 - 检查端口是否被占用
 - 查看日志确认API服务是否正常启动
 
-#### 5. 数据库错误
+#### 5. 警报器不工作
+
+**症状**：温度超过阈值但警报器不响
+
+**解决方案**：
+- 检查继电器模块连接（VCC、GND、IN引脚）
+- 确认GPIO22引脚连接正确
+- 检查继电器模块供电是否正常
+- 测试继电器模块是否正常工作（使用万用表）
+- 确认警报器本身是否正常（直接连接电源测试）
+- 检查配置文件中的WARNING_PIN设置是否正确
+
+#### 6. 数据库错误
 
 **症状**：启动时数据库初始化失败
 
@@ -402,11 +462,11 @@ rpi-workshop-env-monitor/
 │   ├── dht11_sensor.py    # DHT11传感器
 │   ├── ds18b20_sensor.py  # DS18B20传感器
 │   ├── mq2_sensor.py      # MQ2传感器
-│   └── actuators.py       # 执行器实现
+│   └── actuators.py       # 执行器实现（包含警报器控制）
 └── services/              # 服务层
     ├── __init__.py
     ├── base_manager.py    # 管理器基类
-    ├── data_manager.py    # 数据管理服务
+    ├── data_manager.py    # 数据管理服务（包含警报器控制逻辑）
     ├── display_manager.py # 显示管理服务
     └── lcd1602.py         # LCD驱动
 ```
