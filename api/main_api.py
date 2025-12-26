@@ -4,6 +4,7 @@ from state import shared_state
 from database.db import Database  # 导入数据库类
 from typing import List, Dict, Any
 from config import Settings
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="树莓派监控API")
 
@@ -41,6 +42,14 @@ async def run_server(config: Settings, db_instance: Database):
 
 # 然后在main.py中调用时传入db实例
 # await run_server(settings, data_manager.db)
+# 配置 CORS 中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许 Vite 开发服务器的源
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有请求头
+)
 
 
 # --- API路由 ---
