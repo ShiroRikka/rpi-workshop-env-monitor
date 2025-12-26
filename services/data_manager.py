@@ -7,7 +7,7 @@ from hardware.ds18b20_sensor import DS18B20Sensor
 from hardware.mq2_sensor import MQ2Sensor
 
 # 导入执行器类
-from hardware.actuators import RpiMotor
+from hardware.actuators import RpiMotor, RpiRelay
 
 # 导入其他类
 from database.db import Database
@@ -35,6 +35,7 @@ class DataManager(BaseManager):
 
                 # 执行控制逻辑
                 await self._control_fan(ds18b20_data)
+                await self._control_warning(ds18b20_data)
 
                 # 更新共享状态
                 self._shared_state.update(
@@ -44,6 +45,7 @@ class DataManager(BaseManager):
                         "smoke_level": mq2_data,
                         "fan_on": self.actuators["fan"]._is_on,
                         "fan_speed": self.actuators["fan"]._current_speed,
+                        "warning_on": self.actuators["warning"]._is_on,
                     }
                 )
 
@@ -54,13 +56,15 @@ class DataManager(BaseManager):
                     smoke_level=mq2_data,
                     fan_on=self.actuators["fan"]._is_on,
                     fan_speed=self.actuators["fan"]._current_speed,
+                    warning_on=self.actuators["warning"]._is_on,
                 )
 
                 logger.info(
                     f"采集到数据: T={ds18b20_data:.1f}°C,"
                     f"H={dht11_data:.1f}%, "
                     f"烟雾={mq2_data:.2f}, "
-                    f"风扇状态: {'开启' if self.actuators['fan']._is_on else '关闭'}"
+                    f"风扇状态: {'开启' if self.actuators['fan']._is_on else '关闭'}, "
+                    f"报警状态: {'开启' if self.actuators['warning']._is_on else '关闭'}"
                 )
 
             except Exception as e:
@@ -85,7 +89,8 @@ class DataManager(BaseManager):
                 self._config.FAN_MOTOR_FORWARD,
                 self._config.FAN_MOTOR_BACKWARD,
                 self._config.FAN_MOTOR_ENABLE,
-            )
+            ),
+            "warning": RpiRelay(self._config.WARNING_PIN),
         }
 
     async def _control_fan(self, temperature: float):
@@ -142,6 +147,22 @@ class DataManager(BaseManager):
             min(calculated_speed, self._config.FAN_MAX_SPEED),
         )
 
+    async def _control_warning(self, temperature: float):
+        """根据温度控制报警器"""
+        warning = self.actuators["warning"]
+
+        # 温度超过阈值时开启报警
+        if temperature > self._config.TEMPERATURE_THRESHOLD:
+            if not warning._is_on:
+                await warning.turn_on()
+                logger.info(
+                    f"温度 {temperature:.1f}°C 超过阈值 {self._config.TEMPERATURE_THRESHOLD}°C，报警已开启"
+                )
+        else:
+            if warning._is_on:
+                await warning.turn_off()
+                logger.info(f"温度 {temperature:.1f}°C 降至阈值以下，报警已关闭")
+
     async def _save_sensor_data(
         self,
         temp: float = None,
@@ -149,6 +170,7 @@ class DataManager(BaseManager):
         smoke_level: float = None,
         fan_on: bool = False,
         fan_speed: float = None,
+        warning_on: bool = False,
     ):
         """保存传感器数据到数据库"""
         try:
@@ -158,6 +180,7 @@ class DataManager(BaseManager):
                 smoke_level=smoke_level,
                 fan_on=fan_on,
                 fan_speed=fan_speed,
+                warning_on=warning_on,
             )
         except Exception as e:
             logger.error(f"保存传感器数据到数据库失败: {e}")

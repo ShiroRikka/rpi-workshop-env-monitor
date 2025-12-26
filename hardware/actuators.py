@@ -14,13 +14,13 @@ class RpiRelay(BaseActuator):
     async def turn_on(self) -> None:
         await asyncio.to_thread(self.device.on)
         self._is_on = True
-        logger.info("继电器已打开")
+        logger.debug("报警已开启")
         return None
 
     async def turn_off(self) -> None:
         await asyncio.to_thread(self.device.off)
         self._is_on = False
-        logger.info("继电器已关闭")
+        logger.debug("报警已关闭")
         return None
 
 

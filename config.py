@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     FAN_MOTOR_FORWARD: int = 17
     FAN_MOTOR_BACKWARD: int = 18
     FAN_MOTOR_ENABLE: int = 19
+    WARNING_PIN: board.pin = board.D22
 
     # 控制逻辑阈值
     SMOKE_THRESHOLD: float = 600.0
