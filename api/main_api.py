@@ -8,24 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="树莓派监控API")
 
-# 依赖注入：获取数据库实例
-# 这是一个更高级的做法，让API不直接依赖全局变量
-# 但为了简单起见，我们暂时从DataManager获取
-# 在真实项目中，你可能会有一个更复杂的依赖注入容器
-# 这里我们简化处理，假设可以从某个地方获取db实例
-# 为了演示，我们暂时用一个全局变量，但这不是最佳实践
-# 最佳实践是使用FastAPI的Depends系统
-# 我们先实现功能，稍后可以优化
-
-# 暂时先这样，我们稍后优化
-# from services.data_manager import DataManager
-# db_manager = DataManager() # 这不是个好主意，会重复初始化
-
-# 更好的做法是让main_api能访问到已经初始化的db实例
-# 我们先写一个简单的端点，稍后重构
-# 让我们假设在main.py中，我们可以把db实例传给run_server
-
-
 # 修改 api/main_api.py 的 run_server 函数
 async def run_server(config: Settings, db_instance: Database):
     import uvicorn
